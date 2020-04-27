@@ -1,5 +1,5 @@
 import gym
-from gym import error, spaces, utils
+from gym import error, spaces, utils, logger
 from gym.utils import seeding
 
 from counter import TimeIndependentCounter
@@ -80,11 +80,59 @@ class RanSimEnv(gym.Env):
     for i in range(no_of_slices):
         attrs = vars(slices[i].slice_param)
         log_file.write('\nSliceParam\n' + ''.join("%s: %s\n" % item for item in attrs.items()))
-    #log_file.close()
+    log_file.close()
+
+    # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
+    high = np.array([9, 9, 9])
+    low = np.array([0, 0, 0])
+
+    self.action_space = spaces.Discrete(2)
+    self.observation_space = spaces.Box(low, high, dtype=np.float32)
+    self.state = None
+    self.slices = slices
 
   def step(self, action):
-    ...
+    assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
+    #state = self.state
+    # run simulation one Ts
+
+
+    # check state:
+    # get next state
+    slices = self.slices
+    for i in range(len(slices)):
+        tmp_state = 0
+        for srv in slices[i].server_list:
+            tmp_state += srv.get_queue_length()
+        self.state[i]=tmp_state
+
+
+    # check done
+    done = 0
+    done = bool(done)
+
+    # check reward
+    if not done:
+        reward = 1.0
+    elif self.steps_beyond_done is None:
+        # Pole just fell!
+        self.steps_beyond_done = 0
+        reward = 1.0
+    else:
+        if self.steps_beyond_done == 0:
+            logger.warn(
+                "You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
+        self.steps_beyond_done += 1
+        reward = 0.0
+
+
+    return np.array(self.state), reward, done, {}
+
   def reset(self):
-    ...
+      self.state = np.array([0,0,0])
+      #self.steps_beyond_done = None
+
+      return np.array(self.state)
+
   def render(self, mode='human', close=False):
     ...

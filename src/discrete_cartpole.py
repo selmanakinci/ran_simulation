@@ -10,12 +10,11 @@ import gym_ransim
 #if __name__ == '__main__':
 def main(alpha, beta, gamma):
 
-    agent = Agent(alpha=alpha, beta=beta, input_dims=[4], gamma=gamma,
+    agent = Agent(alpha=alpha, beta=beta, input_dims=[3], gamma=gamma,
                   n_actions=2, layer1_size=32, layer2_size=32)
 
     #env = gym.make('CartPole-v1')
     env = gym.make('ransim-v0')
-    #env = RAN_Simulation.make() #make_ran_simulation()
     score_history = []
     score = 0
     num_episodes = 50
