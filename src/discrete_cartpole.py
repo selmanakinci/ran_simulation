@@ -10,11 +10,11 @@ import gym_ransim
 #if __name__ == '__main__':
 def main(alpha, beta, gamma):
 
-    agent = Agent(alpha=alpha, beta=beta, input_dims=[3], gamma=gamma,
+    agent = Agent(alpha=alpha, beta=beta, input_dims=[4], gamma=gamma,
                   n_actions=2, layer1_size=32, layer2_size=32)
 
-    #env = gym.make('CartPole-v1')
-    env = gym.make('ransim-v0')
+    env = gym.make('CartPole-v1')
+    #env = gym.make('ransim-v0')
     score_history = []
     score = 0
     num_episodes = 50
@@ -27,13 +27,20 @@ def main(alpha, beta, gamma):
 
         done = False
         score = 0
+
+
+        ####
         observation = env.reset()
+
+
         while not done:
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
             agent.learn(observation, reward, observation_, done)
             observation = observation_
             score += reward
+        ####
+
         score_history.append(score)
 
     filename = 'results/result_alpha_%.4f_beta_%.4f_gamma_%.2f.png' %(alpha, beta, gamma)

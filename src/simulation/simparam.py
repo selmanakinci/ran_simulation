@@ -26,11 +26,11 @@ class SimParam(object):
         self.P_SIZE = 1*1000*8  # 1kB in bits
 
         # inter-arrival-time, simulation time and local_scheduler granularity in ms
-        self.MEAN_IAT = 5     # mean inter arrival time
+        self.MEAN_IAT = 1     # mean inter arrival time
         #self.MEAN_CG = 1        # mean channel gain value
-        self.T_FINAL = 1000     # in ms
-        self.T_C = 10           # controller period, round period
-        self.T_SM = 10
+        self.T_FINAL = 1#1000     # in ms
+        self.T_C = 21          # controller period, round period
+        self.T_SM = 1
         self.T_S = 1
 
         # Controller Algorithm

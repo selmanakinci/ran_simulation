@@ -89,7 +89,7 @@ class SliceSimulation(object):
         # self.rng.iat_rns.set_parameters(1.)
         # self.rng.st_rns.set_parameters(1. / float(self.slice_param.RHO))
 
-    def simulate_one_round(self):
+    def simulate_one_round(self):  
         """
         Do one simulation run. Initialize simulation and create first and last event.
         After that, one after another event is processed.
