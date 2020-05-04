@@ -17,7 +17,7 @@ def main(alpha, beta, gamma):
     #env = gym.make('ransim-v0')
     score_history = []
     score = 0
-    num_episodes = 50
+    num_episodes = 5000
     for i in range(num_episodes):
         print('episode: ', i,'score: %.3f' % score)
 
