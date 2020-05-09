@@ -24,7 +24,6 @@ class RanSimEnv(gym.Env):
     Main ran_simulation
     """
 
-
     # define sim_param and inside RB pool: all available Resources list
     sim_param = SimParam()
 
@@ -43,7 +42,7 @@ class RanSimEnv(gym.Env):
     # log_file.close()
 
     # initialize SD_RAN_Controller
-    SD_RAN_Controller = Controller(sim_param)
+    self.SD_RAN_Controller = Controller(sim_param)
 
     # Each slice has different users
     slices = []
@@ -86,15 +85,24 @@ class RanSimEnv(gym.Env):
     high = np.array([9, 9, 9])
     low = np.array([0, 0, 0])
 
-    self.action_space = spaces.Discrete(2)
+    self.action_space = spaces.MultiDiscrete([3,3,3]) # no of rb
     self.observation_space = spaces.Box(low, high, dtype=np.float32)
     self.state = None
     self.slices = slices
+    self.slice_results = slice_results
+    self.sim_param = sim_param
 
   def step(self, action):
     assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
-    #state = self.state
-    # run simulation one Ts
+    # assign resources depending on action
+    # run simulation one Ts for each slice
+
+    RB_mapping = self.SD_RAN_Controller.RB_allocate_to_slices(self.slices[0].sim_state.now, self.slices)
+    for i in range(len(self.slices)):
+        #self.slices[i].assign_RB(RB_mapping)
+        #self.slice_results[i].append(self.slices[i].simulate_one_slot())
+        self.slices[i].prep_next_round(RB_mapping[i, :, :])
+        self.slice_results[i].append(self.slices[i].simulate_one_round())
 
 
     # check state:
@@ -108,29 +116,23 @@ class RanSimEnv(gym.Env):
 
 
     # check done
-    done = 0
+    if self.slices[0].sim_state.now == self.sim_param.T_FINAL:
+        done = 1
+    else:
+        done = 0
     done = bool(done)
 
     # check reward
     if not done:
         reward = 1.0
-    elif self.steps_beyond_done is None:
-        # Pole just fell!
-        self.steps_beyond_done = 0
-        reward = 1.0
     else:
-        if self.steps_beyond_done == 0:
-            logger.warn(
-                "You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
-        self.steps_beyond_done += 1
         reward = 0.0
-
 
     return np.array(self.state), reward, done, {}
 
   def reset(self):
       self.state = np.array([0,0,0])
-      #self.steps_beyond_done = None
+
 
       return np.array(self.state)
 

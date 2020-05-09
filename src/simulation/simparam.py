@@ -28,8 +28,8 @@ class SimParam(object):
         # inter-arrival-time, simulation time and local_scheduler granularity in ms
         self.MEAN_IAT = 1     # mean inter arrival time
         #self.MEAN_CG = 1        # mean channel gain value
-        self.T_FINAL = 1#1000     # in ms
-        self.T_C = 21          # controller period, round period
+        self.T_FINAL = 10#1000     # in ms
+        self.T_C = 1          # controller period, round period
         self.T_SM = 1
         self.T_S = 1
 

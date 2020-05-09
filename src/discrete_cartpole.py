@@ -10,14 +10,21 @@ import gym_ransim
 #if __name__ == '__main__':
 def main(alpha, beta, gamma):
 
-    agent = Agent(alpha=alpha, beta=beta, input_dims=[4], gamma=gamma,
-                  n_actions=2, layer1_size=32, layer2_size=32)
+    no_of_rb = 3
+    no_of_slices = 3
 
-    env = gym.make('CartPole-v1')
-    #env = gym.make('ransim-v0')
+    agent0 = Agent(alpha=alpha, beta=beta, input_dims=[no_of_slices], gamma=gamma,
+                  n_actions=no_of_rb, layer1_size=32, layer2_size=32)
+    agent1 = Agent(alpha=alpha, beta=beta, input_dims=[no_of_slices], gamma=gamma,
+                  n_actions=no_of_rb, layer1_size=32, layer2_size=32)
+    agent2 = Agent(alpha=alpha, beta=beta, input_dims=[no_of_slices], gamma=gamma,
+                  n_actions=no_of_rb, layer1_size=32, layer2_size=32)
+
+    #env = gym.make('CartPole-v1')
+    env = gym.make('ransim-v0')
     score_history = []
     score = 0
-    num_episodes = 5000
+    num_episodes = 50
     for i in range(num_episodes):
         print('episode: ', i,'score: %.3f' % score)
 
@@ -28,15 +35,22 @@ def main(alpha, beta, gamma):
         done = False
         score = 0
 
-
         ####
         observation = env.reset()
 
 
         while not done:
-            action = agent.choose_action(observation)
+            action0 = agent0.choose_action(observation)
+            action1 = agent1.choose_action(observation)
+            action2 = agent2.choose_action(observation)
+            action = [action0, action1, action2]
+
             observation_, reward, done, info = env.step(action)
-            agent.learn(observation, reward, observation_, done)
+
+            agent0.learn(observation, reward, observation_, done)
+            agent1.learn(observation, reward, observation_, done)
+            agent2.learn(observation, reward, observation_, done)
+
             observation = observation_
             score += reward
         ####
