@@ -23,12 +23,14 @@ class SimParam(object):
 
         # Packet properties# Read slice results for plotting comparison
         # path = "baseline comparison data/08-03-2020 cts_off"
-        self.P_SIZE = 1*1000*8  # 1kB in bits
+        self.P_SIZE = 300#1*1000*8  # 1kB in bits
+
+        self.max_buffer_size = 10 # max buffer length in packets
 
         # inter-arrival-time, simulation time and local_scheduler granularity in ms
         self.MEAN_IAT = 1     # mean inter arrival time
         #self.MEAN_CG = 1        # mean channel gain value
-        self.T_FINAL = 10#1000     # in ms
+        self.T_FINAL = 2000     # in ms
         self.T_C = 1          # controller period, round period
         self.T_SM = 1
         self.T_S = 1
@@ -40,7 +42,7 @@ class SimParam(object):
         self.ALPHA_C = .1
 
         # all resource blocks
-        self.RB_pool = list(range(3))  # [0, 1, 2, 3, 4, 5]
+        self.RB_pool = list(range(4))  # [0, 1, 2, 3, 4, 5]
 
         # Channel Model Parameters
         self.FREQ = 2*1e9  # 2GHz

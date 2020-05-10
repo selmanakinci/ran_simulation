@@ -10,7 +10,7 @@ import gym_ransim
 #if __name__ == '__main__':
 def main(alpha, beta, gamma):
 
-    no_of_rb = 3
+    no_of_rb = 4
     no_of_slices = 3
 
     agent0 = Agent(alpha=alpha, beta=beta, input_dims=[no_of_slices], gamma=gamma,
@@ -24,7 +24,7 @@ def main(alpha, beta, gamma):
     env = gym.make('ransim-v0')
     score_history = []
     score = 0
-    num_episodes = 50
+    num_episodes = 5
     for i in range(num_episodes):
         print('episode: ', i,'score: %.3f' % score)
 
@@ -35,24 +35,29 @@ def main(alpha, beta, gamma):
         done = False
         score = 0
 
-        ####
-        observation = env.reset()
+        # insert parameters
+        class Parameters:
+            pass
+        parameters = Parameters()
+        parameters.SEED_IAT = i
+        parameters.SEED_SHADOWING = i
+        observation = env.reset(parameters)
 
 
         while not done:
             action0 = agent0.choose_action(observation)
             action1 = agent1.choose_action(observation)
             action2 = agent2.choose_action(observation)
-            action = [action0, action1, action2]
+            action = [[action0], [action1], [action2]]
 
             observation_, reward, done, info = env.step(action)
 
-            agent0.learn(observation, reward, observation_, done)
-            agent1.learn(observation, reward, observation_, done)
-            agent2.learn(observation, reward, observation_, done)
+            agent0.learn(observation, reward[0], observation_, done)
+            agent1.learn(observation, reward[1], observation_, done)
+            agent2.learn(observation, reward[2], observation_, done)
 
             observation = observation_
-            score += reward
+            score += reward.sum()
         ####
 
         score_history.append(score)

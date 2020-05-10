@@ -3,13 +3,13 @@ class SliceParam(object):
     Contains all important simulation parameters
     """
 
-    def __init__(self, sim_param, S = 10):
+    def __init__(self, sim_param):
 
         # Slice ID
         self.SLICE_ID = 1
 
         # current buffer spaces and minimal buffer spaces
-        self.S = S  # max buffer length in packets
+        self.S = sim_param.max_buffer_size  # max buffer length in packets
 
         # serve packets continuously or start on the next slot
         self.cts_service = sim_param.cts_service

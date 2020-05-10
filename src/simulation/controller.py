@@ -17,6 +17,40 @@ class Controller(object):
         self.slices_cycle = []
         self.avg_rate_pf = []
 
+    def RB_allocate_from_action(self, t_start, slice_list, action):
+        """
+
+        """
+        # mapping actions to rbs
+        no_of_rb = len(self.sim_param.RB_pool)
+        if np.sum(action,axis=0)==0:
+            bidding = np.sum(action,axis=1)/1.
+        else:
+            bidding = np.sum(action,axis=1)/np.sum(action,axis=0)
+        bidding *= no_of_rb
+        rb_allocation = np.floor(bidding).astype(int)
+        rb_remaining = no_of_rb - np.sum(rb_allocation)
+        while rb_remaining>0:
+            bidding-=rb_allocation
+            rb_allocation[np.argmax(bidding)]+=1  # only first occurance of max argument is returned
+            rb_remaining-=1
+
+        t_s = self.sim_param.T_S
+        t_c = self.sim_param.T_C
+
+        t_arr = np.arange(t_start, t_start+t_c, t_s)
+        RB_mapping = np.zeros([len(slice_list), len(self.sim_param.RB_pool), len(t_arr)], dtype=bool)
+        rb_idx = 0
+        for i in range(len(slice_list)):
+            count = rb_allocation[i]
+            while count>0:
+                RB_mapping[i, rb_idx, 0]= True
+                rb_idx+=1
+                count -=1
+
+
+        return RB_mapping
+
     def RB_allocate_to_slices(self, t_start, slice_list):
         """
 
