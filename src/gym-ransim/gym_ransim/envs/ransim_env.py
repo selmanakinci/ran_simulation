@@ -2,6 +2,9 @@ import gym
 from gym import error, spaces, utils, logger
 from gym.utils import seeding
 
+#import sys
+#sys.path.insert(1, '/home/lkn/GitRepositories/ran_simulation/src/simulation')
+
 from counter import TimeIndependentCounter
 from slicesimulation import SliceSimulation
 from trafficgenerator import TrafficGenerator

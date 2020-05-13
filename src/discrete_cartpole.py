@@ -10,7 +10,7 @@ import gym_ransim
 #if __name__ == '__main__':
 def main(alpha, beta, gamma):
 
-    no_of_rb = 4
+    no_of_rb = 20
     no_of_slices = 3
 
     agent0 = Agent(alpha=alpha, beta=beta, input_dims=[no_of_slices], gamma=gamma,
@@ -24,12 +24,12 @@ def main(alpha, beta, gamma):
     env = gym.make('ransim-v0')
     score_history = []
     score = 0
-    num_episodes = 5
+    num_episodes = 3
     for i in range(num_episodes):
         print('episode: ', i,'score: %.3f' % score)
 
         #if i>1000:
-        #    env = wrappers.Monitor(env, "tmp/cartpole-untrained",
+        #    env = wrappers.Monitor(env, "tmp/cartpole-untrained",np.sum(action,axis=1)
         #                                video_callable=lambda episode_id: True, force=True)
 
         done = False

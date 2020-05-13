@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/gym-ransim" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/gym-ransim/gym_ransim" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/gym-ransim/gym_ransim/envs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/simulation" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/results" />

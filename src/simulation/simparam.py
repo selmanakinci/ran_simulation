@@ -23,7 +23,7 @@ class SimParam(object):
 
         # Packet properties# Read slice results for plotting comparison
         # path = "baseline comparison data/08-03-2020 cts_off"
-        self.P_SIZE = 300#1*1000*8  # 1kB in bits
+        self.P_SIZE = 100*20#1*1000*8  # 1kB in bits
 
         self.max_buffer_size = 10 # max buffer length in packets
 
@@ -42,7 +42,7 @@ class SimParam(object):
         self.ALPHA_C = .1
 
         # all resource blocks
-        self.RB_pool = list(range(4))  # [0, 1, 2, 3, 4, 5]
+        self.RB_pool = list(range(20))  # [0, 1, 2, 3, 4, 5]
 
         # Channel Model Parameters
         self.FREQ = 2*1e9  # 2GHz
