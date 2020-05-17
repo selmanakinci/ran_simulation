@@ -13,7 +13,7 @@ import numpy as np
 
 class SliceSimulation(object):
 
-    def __init__(self, slice_param, no_seed=False):
+    def __init__(self, slice_param):
         """
         Initialize the Slice Simulation object.
         :param slice_param: is an optional SliceParam object for parameter pre-configuration
@@ -135,7 +135,7 @@ class SliceSimulation(object):
                         if not (e.priority == 4 or e.priority == 5):    # dont count for for slice manager events
                             current_events_dict[e].counter_collection.count_queue()
                         e.process(current_events_dict[e])
-                        if e.timestamp % 100 == 0:
+                        if e.timestamp % 1000 == 0:
                             print("TIMESTAMP: " + str(e.timestamp) + ",PRIORITY " + str(e.priority))
                     else:
                         print("NOW: " + str(self.sim_state.now) + ", EVENT TIMESTAMP: " + str(e.timestamp) + " " + str(e.priority))
@@ -213,4 +213,3 @@ class SliceSimulation(object):
 
         self.slice_result.gather_results(self.server_results)
         return self.slice_result
-

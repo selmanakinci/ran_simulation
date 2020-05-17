@@ -23,7 +23,7 @@ class SimParam(object):
 
         # Packet properties# Read slice results for plotting comparison
         # path = "baseline comparison data/08-03-2020 cts_off"
-        self.P_SIZE = 100*20#1*1000*8  # 1kB in bits
+        self.P_SIZE = 100*200#1*1000*8  # 1kB in bits
 
         self.max_buffer_size = 10 # max buffer length in packets
 

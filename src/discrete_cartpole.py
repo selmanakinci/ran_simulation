@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 from utils import plotLearning
 from gym import wrappers
 import gym_ransim
-
+import time
 
 #if __name__ == '__main__':
 def main(alpha, beta, gamma):
-
+    t0= time.time()
     no_of_rb = 20
     no_of_slices = 3
 
@@ -24,9 +24,10 @@ def main(alpha, beta, gamma):
     env = gym.make('ransim-v0')
     score_history = []
     score = 0
-    num_episodes = 3
+    num_episodes = 5
     for i in range(num_episodes):
         print('episode: ', i,'score: %.3f' % score)
+        t_tmp = time.time()
 
         #if i>1000:
         #    env = wrappers.Monitor(env, "tmp/cartpole-untrained",np.sum(action,axis=1)
@@ -39,8 +40,8 @@ def main(alpha, beta, gamma):
         class Parameters:
             pass
         parameters = Parameters()
-        parameters.SEED_IAT = i
-        parameters.SEED_SHADOWING = i
+        parameters.SEED_IAT = 0
+        parameters.SEED_SHADOWING = 0
         observation = env.reset(parameters)
 
 
@@ -52,6 +53,9 @@ def main(alpha, beta, gamma):
 
             observation_, reward, done, info = env.step(action)
 
+            if done:
+                env.plot()
+
             agent0.learn(observation, reward[0], observation_, done)
             agent1.learn(observation, reward[1], observation_, done)
             agent2.learn(observation, reward[2], observation_, done)
@@ -61,7 +65,8 @@ def main(alpha, beta, gamma):
         ####
 
         score_history.append(score)
-
+        print(time.time() - t_tmp)
+    print(time.time()-t0)
     filename = 'results/result_alpha_%.4f_beta_%.4f_gamma_%.2f.png' %(alpha, beta, gamma)
     #filename = 'cartpole-discrete-actor-critic-alpha0001-beta0005-32x32fc-1500games.png'
     plotLearning(score_history, filename=filename, window=10)

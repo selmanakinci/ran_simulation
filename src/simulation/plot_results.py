@@ -13,11 +13,11 @@ from simparam import SimParam
 def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=SimParam(), slices = []):
 
     # choose plots
-    plot_controller = True
+    plot_controller = False
     plot_slice_manager = True
-    plot_user_results = False
-    plot_user_results_avg = False
-    plot_slice_results = False
+    plot_user_results = True
+    plot_user_results_avg = True
+    plot_slice_results = True
     export_sim_avg = True
     export_user_avg = True
 

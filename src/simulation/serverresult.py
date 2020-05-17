@@ -88,6 +88,10 @@ class ServerResult(object):
                 writer = csv.writer(file)
                 writer.writerows(row_list)
 
+            # Storing data with dataframe
+
+
+
         except:
             print("ERROR: Server Result.gather_results()_slice%d_user_%d is empty. " % (self.server.slicesim.slice_param.SLICE_ID, self.server.user.user_id))
             pass
