@@ -94,7 +94,7 @@ def ran_simulation():
         user_count = len(slice_results[i][-1].server_results)   # choose latest result for data
         for k in range(user_count):
             common_name = "/slice%d_user%d_" % (i, slice_results[i][-1].server_results[k].server.user.user_id)
-            cc_temp = slice_results[i][-1].server_results[k].counter_collection
+            cc_temp = slice_results[i][-1].server_results[k].server.counter_collection
             # tp
             filename = parent_dir + "/tp" + common_name + "sum_power_two.csv"
             savetxt(filename, cc_temp.cnt_tp.sum_power_two, delimiter=',')

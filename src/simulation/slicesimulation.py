@@ -85,7 +85,7 @@ class SliceSimulation(object):
         for i in self.server_list:
             i.server_state.prep_next_round()
         self.slice_param.RB_mapping = RB_mapping
-        self.slice_result = SliceResult(self)  # server results are not reset due to counters
+        #self.slice_result = SliceResult(self)  # server results are not reset due to counters
         # self.rng.iat_rns.set_parameters(1.)
         # self.rng.st_rns.set_parameters(1. / float(self.slice_param.RHO))
 
@@ -135,8 +135,8 @@ class SliceSimulation(object):
                         if not (e.priority == 4 or e.priority == 5):    # dont count for for slice manager events
                             current_events_dict[e].counter_collection.count_queue()
                         e.process(current_events_dict[e])
-                        if e.timestamp % 1000 == 0:
-                            print("TIMESTAMP: " + str(e.timestamp) + ",PRIORITY " + str(e.priority))
+                        #if e.timestamp % 1000 == 0:
+                        #    print("TIMESTAMP: " + str(e.timestamp) + ",PRIORITY " + str(e.priority))
                     else:
                         print("NOW: " + str(self.sim_state.now) + ", EVENT TIMESTAMP: " + str(e.timestamp) + " " + str(e.priority))
                         raise RuntimeError("ERROR: TIMESTAMP OF EVENT IS SMALLER THAN CURRENT TIME.")
@@ -154,7 +154,7 @@ class SliceSimulation(object):
             self.server_results_dict.update({i.user_id: self.server_results[-1]})
 
         self.slice_result.gather_results(self.server_results)
-        return self.slice_result
+        #return self.slice_result
 
     def simulate_one_slot(self):
         """

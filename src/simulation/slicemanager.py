@@ -5,6 +5,7 @@ from matplotlib import pyplot
 from matplotlib import colors
 import matplotlib.patches as mpatches
 from numpy import savetxt
+import pandas as pd
 
 
 class SliceManager(object):
@@ -19,6 +20,7 @@ class SliceManager(object):
         self.slicesim = slicesim
         self.user_ids_cycle = []
         self.avg_rate_pf = []
+        self.df = pd.DataFrame()
 
     def RB_allocate_to_users(self):
         """
@@ -150,10 +152,17 @@ class SliceManager(object):
         # pyplot.savefig(filename)
         # pyplot.close(fig)
 
-        # Storing Data
+        '''# Storing Data
         path = "results/" + self.slicesim.slice_param.timestamp + "/sm/data"
         filename = path + "/RB_matching_t_%d_slice_%d.csv" % (self.slicesim.sim_state.now, int(self.slicesim.slice_param.SLICE_ID))
-        savetxt(filename, RB_matching_sm, delimiter=',')
+        savetxt(filename, RB_matching_sm, delimiter=',')'''
+
+        # Storing data with dataframe
+        t_arr = np.arange(self.slicesim.sim_state.now,self.slicesim.sim_state.now+t_sm,t_s)
+        idx = 0
+        for t in t_arr:
+            self.df[t] = RB_matching_sm[:,idx]
+            idx +=1
 
         return
 

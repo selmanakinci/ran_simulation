@@ -48,9 +48,9 @@ class RanSimEnv(gym.Env):
 
 
   def step(self, action):
-    assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
+    #assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
     slices = self.slices
-    slice_results = self.slice_results
+    #slice_results = self.slice_results
 
     # assign resources depending on action
     RB_mapping = self.SD_RAN_Controller.RB_allocate_from_action(slices[0].sim_state.now, slices, action)
@@ -58,7 +58,8 @@ class RanSimEnv(gym.Env):
     # simulate one round
     for i in range(len(slices)):
         slices[i].prep_next_round(RB_mapping[i, :, :])
-        slice_results[i].append(slices[i].simulate_one_round())
+        slices[i].simulate_one_round()
+        #slice_results[i].append(slices[i].simulate_one_round())
 
     # get next state
     for i in range(len(slices)):
@@ -75,9 +76,9 @@ class RanSimEnv(gym.Env):
     done = bool(done)
 
     # calculate reward
-    reward_arr = np.zeros(len(slice_results))
-    for i in range(len(slice_results)):
-        reward_arr[i] = slice_results[i][0].mean_throughput
+    reward_arr = np.zeros(len(slices))
+    for i in range(len(slices)):
+        reward_arr[i] = slices[i].slice_result.mean_throughput/ self.sim_param.P_SIZE
 
     reward = reward_arr
     return np.array(self.state), reward, done, {}
@@ -94,7 +95,8 @@ class RanSimEnv(gym.Env):
       self.SD_RAN_Controller = Controller(self.sim_param)
 
       # initialize all slices
-      self.slices, self.slice_results = initialize_slices(self.sim_param, log_file)
+      #self.slices, self.slice_results = initialize_slices(self.sim_param, log_file)
+      self.slices = initialize_slices(self.sim_param, log_file)
 
       self.state = np.array([0,0,0])
       return np.array(self.state)
@@ -102,55 +104,65 @@ class RanSimEnv(gym.Env):
   def plot(self):
     sim_param = self.sim_param
     slices = self.slices
-    slice_results = self.slice_results
+    #slice_results = self.slice_results
     no_of_slices = sim_param.no_of_slices
     no_of_users_per_slice = sim_param.no_of_users_per_slice
 
     # Store Simulation Results
     # user results
     parent_dir = "results/" + sim_param.timestamp + "/user_results"
-    path = parent_dir + "/tp"
-    for i in range(len(slice_results)):
-        user_count = len(slice_results[i][-1].server_results)  # choose latest result for data
+    for i in range(len(slices)):
+        tmp_slice_result = slices[i].slice_result
+        user_count = len(tmp_slice_result.server_results)  # choose latest result for data
         for k in range(user_count):
-            common_name = "/slice%d_user%d_" % (i, slice_results[i][-1].server_results[k].server.user.user_id)
-            cc_temp = slice_results[i][-1].server_results[k].counter_collection
+            common_name = "/slice%d_user%d_" % (i, tmp_slice_result.server_results[k].server.user.user_id)
+            cc_temp = tmp_slice_result.server_results[k].server.counter_collection
+
+            # avg results
+            filename = parent_dir + "/average_results" + common_name + "avg_data.csv"
+            df = tmp_slice_result.server_results[k].df
+            df.to_csv(filename, header=True)
             # tp
-            filename = parent_dir + "/tp" + common_name + "sum_power_two.csv"
-            savetxt(filename, cc_temp.cnt_tp.sum_power_two, delimiter=',')
-            filename = parent_dir + "/tp" + common_name + "values.csv"
-            savetxt(filename, cc_temp.cnt_tp.values, delimiter=',')
-            filename = parent_dir + "/tp" + common_name + "timestamps.csv"
-            savetxt(filename, cc_temp.cnt_tp.timestamps, delimiter=',')
-
-            filename = parent_dir + "/tp" + common_name + "all_data.csv"
-            # savetxt(filename, np.transpose(np.array([cc_temp.cnt_tp.values,cc_temp.cnt_tp.timestamps])), delimiter=',')
-            df = DataFrame(np.transpose(np.array([cc_temp.cnt_tp.values, cc_temp.cnt_tp.timestamps])),
-                           columns=['Values', 'Timestamps'])
-            export_csv = df.to_csv(filename, index=None, header=True)
-
+            filename = parent_dir + "/tp" + common_name + "tp_data.csv"
+            df = DataFrame(np.array([cc_temp.cnt_tp.timestamps, cc_temp.cnt_tp.values, cc_temp.cnt_tp.sum_power_two]),
+                           index=['Timestamps','Values','SumPowerTwo'])
+            df.to_csv(filename, header=False)
             # tp2
-            filename = parent_dir + "/tp2" + common_name + "sum_power_two.csv"
-            savetxt(filename, cc_temp.cnt_tp2.sum_power_two, delimiter=',')
-            filename = parent_dir + "/tp2" + common_name + "values.csv"
-            savetxt(filename, cc_temp.cnt_tp2.values, delimiter=',')
-            filename = parent_dir + "/tp2" + common_name + "timestamps.csv"
-            savetxt(filename, cc_temp.cnt_tp2.timestamps, delimiter=',')
+            filename = parent_dir + "/tp2" + common_name + "tp2_data.csv"
+            df = DataFrame(np.array([cc_temp.cnt_tp2.timestamps, cc_temp.cnt_tp2.values, cc_temp.cnt_tp2.sum_power_two]),
+                           index=['Timestamps','Values','SumPowerTwo'])
+            df.to_csv(filename, header=False)
             # ql
-            filename = parent_dir + "/ql" + common_name + "sum_power_two.csv"
-            savetxt(filename, cc_temp.cnt_ql.sum_power_two, delimiter=',')
-            filename = parent_dir + "/ql" + common_name + "values.csv"
-            savetxt(filename, cc_temp.cnt_ql.values, delimiter=',')
-            filename = parent_dir + "/ql" + common_name + "timestamps.csv"
-            savetxt(filename, cc_temp.cnt_ql.timestamps, delimiter=',')
+            filename = parent_dir + "/ql" + common_name + "ql_data.csv"
+            df = DataFrame(np.array([cc_temp.cnt_ql.timestamps, cc_temp.cnt_ql.values, cc_temp.cnt_ql.sum_power_two]),
+                           index=['Timestamps','Values','SumPowerTwo'])
+            df.to_csv(filename, header=False)
             # system time (delay)
-            filename = parent_dir + "/delay" + common_name + "values.csv"
-            savetxt(filename, cc_temp.cnt_syst.values, delimiter=',')
-            filename = parent_dir + "/delay" + common_name + "timestamps.csv"
-            savetxt(filename, cc_temp.cnt_syst.timestamps, delimiter=',')
+            filename = parent_dir + "/delay" + common_name + "delay_data.csv"
+            df = DataFrame(np.array([cc_temp.cnt_syst.timestamps, cc_temp.cnt_syst.values]),
+                           index=['Timestamps','Values'])
+            df.to_csv(filename, header=False)
             # Find how to insert histograms
 
-    # plot results
+    # slice results
+    parent_dir = "results/" + sim_param.timestamp + "/slice_results"
+    for i in range(len(slices)):
+        common_name = "/slice%d_" % i
+        # avg results
+        filename = parent_dir + "/average_results" + common_name + "avg_data.csv"
+        df = slices[i].slice_result.df
+        df.to_csv(filename, header=True)
+
+    # Store Slice manager allocation dataframe
+    parent_dir = "results/" + sim_param.timestamp + "/sm"
+    for i in range(len(slices)):
+        common_name = "/slice%d_" % i
+        # avg results
+        filename = parent_dir + common_name + "rb_allocation.csv"
+        df = slices[i].slice_manager.df
+        df.to_csv(filename, header=True)
+
+    '''# plot results
     parent_dir = "results/" + sim_param.timestamp
     plot_results(parent_dir, no_of_slices, no_of_users_per_slice, sim_param, slices)
 
@@ -169,7 +181,7 @@ class RanSimEnv(gym.Env):
         rb_dist.append(slicesum)
     totalsum = np.nansum(rb_dist)
     print("rb dist (RR MCQI PF): ", *np.round(np.divide(rb_dist, totalsum / 100), 1))
-
+    '''
 
 def render(self, mode='human', close=False):
     ...

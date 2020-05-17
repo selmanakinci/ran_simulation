@@ -1,7 +1,8 @@
 import numpy as np
-from matplotlib import pyplot
-from numpy import savetxt
-import csv
+#from matplotlib import pyplot
+#from numpy import savetxt
+#import csv
+import pandas as pd
 
 
 class SliceResult(object):
@@ -28,6 +29,9 @@ class SliceResult(object):
         self.blocking_probability = 0
         self.mean_throughput = np.NAN
         self.mean_throughput2 = np.NAN
+
+        index = 'mean_queue_length mean_system_time mean_throughput mean_throughput2 packets_dropped packets_served packets_total blocking_probability'
+        self.df = pd.DataFrame(index=index.split())
 
         self.server_results = None
         #self.total_throughput_x = None
@@ -98,7 +102,7 @@ class SliceResult(object):
             if no_of_tp_users2 > 0:
                 self.mean_throughput2 /= no_of_tp_users2  # users with tp data are counted
 
-            # # Storing Data
+            '''# Storing Data
             parent_dir = "results/" + self.sim.slice_param.timestamp + "/slice_results/average_results/data"
             common_name = "/%d_slice%d_" % (self.sim.sim_state.now, self.sim.slice_param.SLICE_ID)
             # Storing average data
@@ -113,7 +117,12 @@ class SliceResult(object):
             filename = parent_dir + common_name + "average_values.csv"
             with open(filename, 'w', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerows(row_list)
+                writer.writerows(row_list)'''
+
+            # Storing data with dataframe
+            time = self.sim.sim_state.now
+            self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_throughput, self.mean_throughput2, self.packets_dropped, self.packets_served, self.packets_total, self.blocking_probability]
+
 
         except:
             print("ERROR: Slice Result.gather_results()_slice%d is empty. " % self.sim.slice_param.SLICE_ID)

@@ -24,7 +24,7 @@ def main(alpha, beta, gamma):
     env = gym.make('ransim-v0')
     score_history = []
     score = 0
-    num_episodes = 5
+    num_episodes = 50
     for i in range(num_episodes):
         print('episode: ', i,'score: %.3f' % score)
         t_tmp = time.time()
@@ -65,7 +65,7 @@ def main(alpha, beta, gamma):
         ####
 
         score_history.append(score)
-        print(time.time() - t_tmp)
+        #print(time.time() - t_tmp)
     print(time.time()-t0)
     filename = 'results/result_alpha_%.4f_beta_%.4f_gamma_%.2f.png' %(alpha, beta, gamma)
     #filename = 'cartpole-discrete-actor-critic-alpha0001-beta0005-32x32fc-1500games.png'

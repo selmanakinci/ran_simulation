@@ -5,13 +5,14 @@ from user import User
 
 def initialize_slices(sim_param, log_file):
 
-    slices, slice_results = ([] for i in range(2))
+    #slices, slice_results = ([] for i in range(2))
+    slices = []
 
     for i in range(sim_param.no_of_slices):
         slice_param_tmp = SliceParam(sim_param)
         slice_param_tmp.SLICE_ID = i
         slices.append(SliceSimulation(slice_param_tmp))
-        slice_results.append([])
+        #slice_results.append([])
 
         # initialize all users with traffics and distances
         tmp_users = []
@@ -38,4 +39,4 @@ def initialize_slices(sim_param, log_file):
       log_file.write('\nSliceParam\n' + ''.join("%s: %s\n" % item for item in attrs.items()))
     log_file.close()
 
-    return slices, slice_results
+    return slices#, slice_results

@@ -1,6 +1,7 @@
 #import os
-from numpy import savetxt
-import csv
+#from numpy import savetxt
+#import csv
+import pandas as pd
 
 
 class ServerResult(object):
@@ -29,7 +30,9 @@ class ServerResult(object):
         self.mean_throughput = 0
         self.blocking_probability = 0
 
-        self.counter_collection = self.server.counter_collection
+        #self.counter_collection = self.server.counter_collection
+        index = 'mean_queue_length mean_system_time mean_throughput mean_throughput2 packets_dropped packets_served packets_total blocking_probability'
+        self.df = pd.DataFrame(index=index.split())
 
         # self.cnt_tp = None
         # self.cnt_ql = None
@@ -55,26 +58,12 @@ class ServerResult(object):
             # self.cnt_ql = self.server.counter_collection.cnt_ql
             # self.cnt_syst = self.server.counter_collection.cnt_syst
 
-            # # Plotting
-            # filename = parent_dir + "tp" + common_name + "tp.png"
-            # self.server.counter_collection.cnt_tp.plot(filename)
-            #
-            # filename = parent_dir + "ql" + common_name + "H_ql.png"
-            # self.server.counter_collection.hist_ql.report(filename)
-            # filename = parent_dir + "ql" + common_name + "ql.png"
-            # self.server.counter_collection.cnt_ql.plot(filename)
-            #
-            # filename = parent_dir + "delay" + common_name + "H_delay.png"
-            # self.server.counter_collection.hist_syst.report(filename)
-            # filename = parent_dir + "delay" + common_name + "delay.png"
-            # self.server.counter_collection.cnt_syst.plot(filename)
-
             self.packets_dropped = self.server.server_state.num_blocked_packets
             self.packets_served = self.server.server_state.num_completed_packets
             self.packets_total = self.server.server_state.num_packets
             self.blocking_probability = self.server.server_state.get_blocking_probability()
 
-            # Storing average data
+            '''# Storing average data
             row_list = [["mean_queue_length", self.mean_queue_length],
                         ["mean_system_time", self.mean_system_time],
                         ["mean_throughput", self.mean_throughput],
@@ -86,11 +75,11 @@ class ServerResult(object):
             filename = parent_dir + common_name + "average_values.csv"
             with open(filename, 'w', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerows(row_list)
+                writer.writerows(row_list)'''
 
             # Storing data with dataframe
-
-
+            time = self.server.slicesim.sim_state.now
+            self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_throughput, self.mean_throughput2, self.packets_dropped, self.packets_served, self.packets_total, self.blocking_probability]
 
         except:
             print("ERROR: Server Result.gather_results()_slice%d_user_%d is empty. " % (self.server.slicesim.slice_param.SLICE_ID, self.server.user.user_id))
