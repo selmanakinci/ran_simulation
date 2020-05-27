@@ -165,4 +165,3 @@ class SliceManager(object):
             idx +=1
 
         return
-

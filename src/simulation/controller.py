@@ -1,8 +1,9 @@
 import numpy as np
+import math
 from matplotlib import pyplot
 from numpy import savetxt
 from itertools import cycle
-
+import pandas as pd
 
 class Controller(object):
     """
@@ -16,10 +17,11 @@ class Controller(object):
         self.sim_param = sim_param
         self.slices_cycle = []
         self.avg_rate_pf = []
+        self.df = pd.DataFrame()
 
     def RB_allocate_from_action(self, t_start, slice_list, action):
-        """
-
+        '''""" method 1: 1slice-1agent: discrete action (0, no_of_rb),
+                        mapped to no_of_rb by bidding
         """
         # mapping actions to rbs
         no_of_rb = len(self.sim_param.RB_pool)
@@ -46,10 +48,79 @@ class Controller(object):
             while count>0:
                 RB_mapping[i, rb_idx, 0]= True
                 rb_idx+=1
-                count -=1
+                count -=1'''
 
+        """
+            method 2: 1agent: discrete action (0, no_of_slices ** no_of_rb), 
+                        mapped to no_of_rb by convertion 
+        """
+        no_of_rb = len(self.sim_param.RB_pool)
+        def dec_to_base( num, base, size):  # Maximum base - 36
+            base_num = ""
+            while num > 0:
+                dig = int(num % base)
+                if dig < 10:    base_num += str(dig)
+                else:           base_num += chr(ord('A') + dig - 10)  # Using uppercase letters
+                num //= base
+            while len(base_num)<size: base_num += str(0)
+            base_num = base_num[::-1]  # To reverse the string
+            return base_num
+
+        rb_dist = dec_to_base(action,len(slice_list), no_of_rb)
+
+        t_s = self.sim_param.T_S
+        t_c = self.sim_param.T_C
+        t_arr = np.arange(t_start, t_start + t_c, t_s)
+        RB_mapping = np.zeros([len(slice_list), len(self.sim_param.RB_pool), len(t_arr)], dtype=bool)
+        for i in range(no_of_rb):
+            slice_idx = int(rb_dist[i])
+            RB_mapping[slice_idx, i, 0] = True
+
+        # Storing data with dataframe
+        RB_allocation = np.full(RB_mapping.shape[1:],np.nan, dtype=int)
+        for i in range(len(slice_list)):
+            RB_allocation[RB_mapping[i]==True] = i
+
+        t_arr = np.arange(t_start,t_start+t_c,t_s)
+        idx = 0
+        for t in t_arr:
+            self.df[t] = RB_allocation[:,idx]
+            idx +=1
 
         return RB_mapping
+
+    def get_CQI_data(self, slice_list):
+        '''
+        return CQI values for each slice* user* rb* time combination within next round(T_C)
+
+        :param slice_list:
+        :return:
+        '''
+
+        t_s = self.sim_param.T_S
+        t_c = self.sim_param.T_C
+        t_start = slice_list[0].sim_state.now
+        t_arr = np.arange(t_start, t_start + t_c, t_s)
+
+        #CQI_matrix = np.zeros([len(slice_list),len(slice_list[0].server_list), len(self.sim_param.RB_pool), len(t_arr)])
+        CQI_data = []
+        tmp_CQI_slice = []
+        for s in slice_list:  # loop over slices
+            tmp_CQI_user = []
+            for u in s.user_list:  # loop over users
+                tmp_CQI_time = []
+                for t in t_arr:  # loop over time
+                    tmp_CQI_rb = []
+                    for r in self.sim_param.RB_pool:  # loop over RBs
+                        data_rate = u.channel.get_data_rate([r], t) # insert index of rb as list, time
+                        tmp_CQI = data_rate / s.slice_param.P_SIZE
+                        tmp_CQI_rb.append(tmp_CQI)
+                    tmp_CQI_time.append(tmp_CQI_rb)
+                tmp_CQI_user.append(tmp_CQI_time)
+            tmp_CQI_slice.append(tmp_CQI_user)
+        CQI_data.append(tmp_CQI_slice)
+
+        return CQI_data
 
     def RB_allocate_to_slices(self, t_start, slice_list):
         """
@@ -161,11 +232,20 @@ class Controller(object):
         # pyplot.close(fig)
 
         # Storing Data
-        path = "results/" + self.sim_param.timestamp + "/controller/data"
-
+        '''path = "results/" + self.sim_param.timestamp + "/controller/data"
         for i in range(len(slice_list)):
             filename = path + "/RB_list_t_%d_slice_%d.csv" % (t_start,i)
-            savetxt(filename, RB_mapping[i], delimiter=',')
+            savetxt(filename, RB_mapping[i], delimiter=',')'''
 
+        # Storing data with dataframe
+        RB_allocation = np.full(RB_mapping.shape[1:],np.nan, dtype=int)
+        for i in range(len(slice_list)):
+            RB_allocation[RB_mapping[i]==True] = i
+
+        t_arr = np.arange(t_start,t_start+t_c,t_s)
+        idx = 0
+        for t in t_arr:
+            self.df[t] = RB_allocation[:,idx]
+            idx +=1
 
         return RB_mapping

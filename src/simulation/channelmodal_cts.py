@@ -40,7 +40,7 @@ class ChannelModalCts(object):
         self.shadowing = self.get_shadowing()
 
     def get_shadowing(self):
-        t_final = self.user.sim_param.T_FINAL*2
+        t_final = self.user.sim_param.T_FINAL*20
         shadowing = np.empty((0, t_final))
 
         seed_shadowing = self.user.user_id * len(self.RB_pool)

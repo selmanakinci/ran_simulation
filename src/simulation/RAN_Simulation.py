@@ -28,7 +28,7 @@ def ran_simulation():
     no_of_users_per_slice = sim_param.no_of_users_per_slice
 
     # create result directories
-    create_dir(sim_param.timestamp)
+    create_dir(sim_param)
 
     # create logfile and write SimParameters
     results_dir = "results/" + sim_param.timestamp
@@ -49,7 +49,7 @@ def ran_simulation():
     for i in range(no_of_slices):
         slice_param_tmp = SliceParam(sim_param)
         slice_param_tmp.SLICE_ID = i
-        slices.append(SliceSimulation(slice_param_tmp, False))
+        slices.append(SliceSimulation(slice_param_tmp))
         slice_results.append([])
 
         # initialize all users with traffics and distances

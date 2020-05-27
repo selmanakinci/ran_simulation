@@ -1,4 +1,4 @@
-from matplotlib import pyplot
+import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 from countercollection import CounterCollection
@@ -8,89 +8,88 @@ import re
 import csv
 from statistics import mean
 from simparam import SimParam
+import pandas as pd
 
 
-def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=SimParam(), slices = []):
+def plot_results(parent_dir, sim_param=SimParam(), slices = []):
+
 
     # choose plots
-    plot_controller = False
+    plot_controller = True
     plot_slice_manager = True
     plot_user_results = True
     plot_user_results_avg = True
     plot_slice_results = True
-    export_sim_avg = True
-    export_user_avg = True
 
     # parameters
     t_c = sim_param.T_C
     t_sm = sim_param.T_SM
     t_final = sim_param.T_FINAL
+    no_of_slices = sim_param.no_of_slices
+    no_of_users_per_slice = sim_param.no_of_users_per_slice
 
     # Controller
     if plot_controller:
-        path = parent_dir + "/controller/data"
-        for i in range(int(t_final/t_c)):
-            t_tmp = i*t_c
+        path = parent_dir + "/controller/"
+        filename = path + "data/rb_allocation.csv"
+        df = pd.read_csv(filename)
 
-            # plotting RB mapping
-            fig, axes = pyplot.subplots(1, no_of_slices, figsize=(12, 3))
-            if no_of_slices == 1:
-                filename = path + "/RB_list_t_%d_slice_%d.csv" % (t_tmp, 0)
-                data = np.loadtxt(filename, delimiter=',')
-                if len(data.shape) == 1:
-                    data = np.expand_dims(data, axis=0)
-                axes.imshow(data, aspect='auto')
-            else:
-                for j in range(no_of_slices):
-                    filename = path + "/RB_list_t_%d_slice_%d.csv" % (t_tmp, j)
-                    data = np.loadtxt(filename, delimiter=',')
-                    if len(data.shape) == 1:
-                        data = np.expand_dims(data, axis=0)
-                    axes[j].imshow(data, aspect='auto')
+        fig = plt.figure(figsize=(sim_param.T_FINAL / 5, 6))
+        im = plt.imshow(df.values, origin='lower', aspect='auto', interpolation='none')
+        ax = plt.gca()
+        xticks = np.arange(0, sim_param.T_FINAL, 50)
+        yticks = np.arange(0, len(sim_param.RB_pool), 2)
+        ax.set_xticks(xticks)
+        ax.set_yticks(yticks)
 
-            filename = parent_dir + "/controller/plot_t_%d.png" % t_tmp
-            pyplot.savefig(filename)
-            pyplot.close(fig)
+        if no_of_slices != 1:
+            colors = [im.cmap(float(value / (no_of_slices - 1))) for value in range(
+                no_of_slices)]  # get the colors of the values, according to the colormap used by imshow
+            patches = [mpatches.Patch(color=colors[k], label="Slice id {l}".format(l=k)) for k in
+                       range(no_of_slices)]  # create a patch (proxy artist) for every color
+        else:
+            colors = im.cmap(0.)
+            patches = [mpatches.Patch(label="Slice id {l}".format(l=k)) for k in
+                       range(no_of_slices)]  # create a patch (proxy artist) for every color
+
+        plt.legend(handles=patches, bbox_to_anchor=(1, 1), loc='upper left')
+        filename = path + "plot_RB_allocation.png"
+        plt.savefig(filename)
+        plt.close(fig)
+
 
     # SLICE MANAGER
     # plotting RB matching
     if plot_slice_manager:
-        path = parent_dir + "/sm/data/"
-        for i in range(int(t_final/t_c)):
-            t_tmp = i*t_c
-            t_arr = np.arange(t_tmp,t_tmp+t_c,t_sm)
-            for j in range(no_of_slices):
-                data_list = []
-                for t in t_arr:
-                    filename = path + "RB_matching_t_%d_slice_%d.csv" % (t, j)
-                    data = np.loadtxt(filename, delimiter=',')
-                    data_list.append(data)
-                if len(data_list[0].shape)>1:
-                    RB_matching_sm = np.concatenate(data_list, axis=1)
-                else:
-                    RB_matching_sm = data_list
-                if not np.isnan(RB_matching_sm).all():
-                    fig = pyplot.figure(figsize=(12, 3))
-                    im = pyplot.imshow(RB_matching_sm, aspect='auto')
-                    if no_of_users_per_slice != 1:
-                        colors = [im.cmap(float(value/(no_of_users_per_slice-1))) for value in range(no_of_users_per_slice)]  # get the colors of the values, according to the colormap used by imshow
-                        patches = [mpatches.Patch(color=colors[k], label="User id {l}".format(l=k)) for k in
-                                   range(no_of_users_per_slice)]  # create a patch (proxy artist) for every color
+        path = parent_dir + "/sm/"
+        for i in range(no_of_slices):
+            filename = path + "data/slice%d_rb_allocation.csv" % (i)
+            df = pd.read_csv(filename)
 
-                    else:
-                        colors = im.cmap(0.)
-                        patches = [mpatches.Patch( label="User id {l}".format(l=k)) for k in
-                                   range(no_of_users_per_slice)]  # create a patch (proxy artist) for every color
+            fig = plt.figure(figsize=(sim_param.T_FINAL/5, 6))
+            im = plt.imshow(df.values,origin='lower' , aspect='auto',interpolation='none')
+            ax = plt.gca()
+            xticks = np.arange(0,sim_param.T_FINAL,50)
+            yticks = np.arange(0,len(sim_param.RB_pool),5)
+            ax.set_xticks(xticks)
+            ax.set_yticks(yticks)
 
-                    pyplot.legend(handles=patches, bbox_to_anchor=(1.005, 1), loc=2, borderaxespad=0.)  # put those patched as legend-handles into the legend
-                    filename = parent_dir + "/sm/plot_t_%d_slice_%d.png" % (t_tmp,j)
-                    pyplot.savefig(filename)
-                    pyplot.close(fig)
-                else:
-                    print("ERROR: Slice Manager Plotting: t_%d_slice_%d is empty. " % (t_tmp,j))
+            if no_of_users_per_slice != 1:
+                colors = [im.cmap(float(value / (no_of_users_per_slice - 1))) for value in range(
+                    no_of_users_per_slice)]  # get the colors of the values, according to the colormap used by imshow
+                patches = [mpatches.Patch(color=colors[k], label="User id {l}".format(l=k)) for k in
+                           range(no_of_users_per_slice)]  # create a patch (proxy artist) for every color
+            else:
+                colors = im.cmap(0.)
+                patches = [mpatches.Patch(label="User id {l}".format(l=k)) for k in
+                           range(no_of_users_per_slice)]  # create a patch (proxy artist) for every color
 
+            plt.legend(handles=patches, bbox_to_anchor=(1,1), loc='upper left')
+            filename = path + "plot_slice_%d.png" % i
+            plt.savefig(filename)
+            plt.close(fig)
 
-    # Server Results
+    # Server(user) Results
     pseudo_server = Server(0,0,0)
     tmp_counter_collection = CounterCollection(pseudo_server)
     if plot_user_results:
@@ -98,27 +97,25 @@ def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=
         for j in range(no_of_slices):
             for k in range(no_of_users_per_slice):
                 user_id = j*no_of_users_per_slice + k
+
                 # tp
-                filename = path + "/tp" + "/slice%d_user%d_sum_power_two.csv" % (j, user_id)
-                tmp_counter_collection.cnt_tp.sum_power_two = np.loadtxt(filename, delimiter=',')
-                filename = path + "/tp" + "/slice%d_user%d_values.csv" % (j, user_id)
-                tmp_counter_collection.cnt_tp.values = np.loadtxt(filename, delimiter=',')
-                filename = path + "/tp" + "/slice%d_user%d_timestamps.csv" % (j, user_id)
-                tmp_counter_collection.cnt_tp.timestamps = np.loadtxt(filename, delimiter=',')
+                filename = path + "/tp" + "/slice%d_user%d_tp_data.csv" % (j, user_id)
+                df = pd.read_csv(filename, header= None, index_col=0)
+                tmp_counter_collection.cnt_tp.sum_power_two = df.loc['SumPowerTwo'].to_numpy()
+                tmp_counter_collection.cnt_tp.values = df.loc['Values'].to_numpy()
+                tmp_counter_collection.cnt_tp.timestamps = df.loc['Timestamps'].to_numpy()
                 plotname = path + "/tp" + "/plot_slice%d_user%d.png" % (j, user_id)
                 if tmp_counter_collection.cnt_tp.timestamps.size ==0:
                     print("Warning: Throughput data for slice%d_user%d is empty. " % (j, user_id))
                 else:
                     tmp_counter_collection.cnt_tp.plot(plotname, one_round=False)
 
-
                 # tp2
-                filename = path + "/tp2" + "/slice%d_user%d_sum_power_two.csv" % (j, user_id)
-                tmp_counter_collection.cnt_tp2.sum_power_two = np.loadtxt(filename, delimiter=',')
-                filename = path + "/tp2" + "/slice%d_user%d_values.csv" % (j, user_id)
-                tmp_counter_collection.cnt_tp2.values = np.loadtxt(filename, delimiter=',')
-                filename = path + "/tp2" + "/slice%d_user%d_timestamps.csv" % (j, user_id)
-                tmp_counter_collection.cnt_tp2.timestamps = np.loadtxt(filename, delimiter=',')
+                filename = path + "/tp2" + "/slice%d_user%d_tp2_data.csv" % (j, user_id)
+                df = pd.read_csv(filename, header=None, index_col=0)
+                tmp_counter_collection.cnt_tp2.sum_power_two = df.loc['SumPowerTwo'].to_numpy()
+                tmp_counter_collection.cnt_tp2.values = df.loc['Values'].to_numpy()
+                tmp_counter_collection.cnt_tp2.timestamps = df.loc['Timestamps'].to_numpy()
                 plotname = path + "/tp2" + "/plot_slice%d_user%d.png" % (j, user_id)
                 if tmp_counter_collection.cnt_tp2.timestamps.size ==0:
                     print("Warning: Throughput data for slice%d_user%d is empty. " % (j, user_id))
@@ -126,12 +123,11 @@ def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=
                     tmp_counter_collection.cnt_tp2.plot(plotname, one_round=False)
 
                 # ql
-                filename = path + "/ql" + "/slice%d_user%d_sum_power_two.csv" % (j, user_id)
-                tmp_counter_collection.cnt_ql.sum_power_two = np.loadtxt(filename, delimiter=',')
-                filename = path + "/ql" + "/slice%d_user%d_values.csv" % (j, user_id)
-                tmp_counter_collection.cnt_ql.values = np.loadtxt(filename, delimiter=',')
-                filename = path + "/ql" + "/slice%d_user%d_timestamps.csv" % (j, user_id)
-                tmp_counter_collection.cnt_ql.timestamps = np.loadtxt(filename, delimiter=',')
+                filename = path + "/ql" + "/slice%d_user%d_ql_data.csv" % (j, user_id)
+                df = pd.read_csv(filename, header=None, index_col=0)
+                tmp_counter_collection.cnt_ql.sum_power_two = df.loc['SumPowerTwo'].to_numpy()
+                tmp_counter_collection.cnt_ql.values = df.loc['Values'].to_numpy()
+                tmp_counter_collection.cnt_ql.timestamps = df.loc['Timestamps'].to_numpy()
                 plotname = path + "/ql" + "/plot_slice%d_user%d.png" % (j, user_id)
                 if tmp_counter_collection.cnt_ql.timestamps.size ==0:
                     print("Warning: Queue length data for slice%d_user%d is empty. " % (j, user_id))
@@ -139,10 +135,10 @@ def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=
                     tmp_counter_collection.cnt_ql.plot(plotname, one_round=False)
 
                 # syst (delay)
-                filename = path + "/delay" + "/slice%d_user%d_values.csv" % (j, user_id)
-                tmp_counter_collection.cnt_syst.values = np.loadtxt(filename, delimiter=',')
-                filename = path + "/delay" + "/slice%d_user%d_timestamps.csv" % (j, user_id)
-                tmp_counter_collection.cnt_syst.timestamps = np.loadtxt(filename, delimiter=',')
+                filename = path + "/delay" + "/slice%d_user%d_delay_data.csv" % (j, user_id)
+                df = pd.read_csv(filename, header=None, index_col=0)
+                tmp_counter_collection.cnt_syst.values = df.loc['Values'].to_numpy()
+                tmp_counter_collection.cnt_syst.timestamps = df.loc['Timestamps'].to_numpy()
                 plotname = path + "/delay" + "/plot_slice%d_user%d.png" % (j, user_id)
                 if tmp_counter_collection.cnt_syst.timestamps.size == 0:
                     print("Warning: System Time for slice%d_user%d is empty. " % (j, user_id))
@@ -159,27 +155,17 @@ def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=
         for j in range(no_of_slices):
             for k in range(no_of_users_per_slice):
                 user_id = j * no_of_users_per_slice + k
-                tmp_mean_queue_length = []
-                tmp_mean_system_time = []
-                tmp_mean_throughput = []
-                tmp_packets_dropped = []
-                tmp_packets_served = []
-                tmp_packets_total = []
-                tmp_blocking_probability = []
-                for t in t_arr:
-                    filename = path + "/%d_slice%d_user%d_average_values.csv" % (t, j, user_id)
-                    with open(filename, 'rt')as f:
-                        reader = csv.reader(f)
-                        for row in reader:
-                            if row[0] == 'mean_queue_length': tmp_mean_queue_length.append(round(float(row[1]),2))
-                            elif row[0] == 'mean_system_time': tmp_mean_system_time.append(round(float(row[1]),2))
-                            elif row[0] == 'mean_throughput': tmp_mean_throughput.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_dropped': tmp_packets_dropped.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_served': tmp_packets_served.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_total': tmp_packets_total.append(round(float(row[1]),2))
-                            elif row[0] == 'blocking_probability': tmp_blocking_probability.append(round(float(row[1]),2))
+                filename = path + "/slice%d_user%d_avg_data.csv" % (j, user_id)
+                df = pd.read_csv(filename, header=0, index_col=0)
+                tmp_mean_queue_length = df.loc['mean_queue_length'].to_numpy()
+                tmp_mean_system_time = df.loc['mean_system_time'].to_numpy()
+                tmp_mean_throughput = df.loc['mean_throughput'].to_numpy()
+                tmp_packets_total = df.loc['packets_total'].to_numpy()
+                tmp_packets_served = df.loc['packets_served'].to_numpy()
+                tmp_packets_dropped = df.loc['packets_dropped'].to_numpy()
+                tmp_blocking_probability = df.loc['blocking_probability'].to_numpy()
 
-                fig, axes = pyplot.subplots(4, 2, figsize=(12, 20))
+                fig, axes = plt.subplots(4, 2, figsize=(12, 20))
                 tmp_data = tmp_mean_queue_length
                 tmp_plot = axes[0, 0]
                 tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
@@ -249,55 +235,8 @@ def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=
                 axes[3,1].set_xlabel('time')
                 axes[0,0].set_xlabel('time')
                 filename = parent_dir + "/user_results/average_results/plot_slice%d_user%d_average_values.png" % (j, user_id)
-                pyplot.savefig(filename)
-                pyplot.close(fig)
-
-
-    # export simulation average results for each user
-    if export_user_avg:
-        path = parent_dir + "/user_results/average_results/data"
-        t_arr = np.arange(t_c,t_final+t_c,t_c)
-        for j in range(no_of_slices):
-            for k in range(no_of_users_per_slice):
-                try:
-                    user_id = j * no_of_users_per_slice + k
-                    tmp_mean_queue_length = []
-                    tmp_mean_system_time = []
-                    tmp_mean_throughput = []
-                    tmp_packets_dropped = []
-                    tmp_packets_served = []
-                    tmp_packets_total = []
-                    tmp_blocking_probability = []
-                    for t in t_arr:
-                        filename = path + "/%d_slice%d_user%d_average_values.csv" % (t, j, user_id)
-                        with open(filename, 'rt')as f:
-                            reader = csv.reader(f)
-                            for row in reader:
-                                if row[0] == 'mean_queue_length': tmp_mean_queue_length.append(round(float(row[1]),2))
-                                elif row[0] == 'mean_system_time': tmp_mean_system_time.append(round(float(row[1]),2))
-                                elif row[0] == 'mean_throughput': tmp_mean_throughput.append(round(float(row[1]),2))
-                                elif row[0] == 'packets_dropped': tmp_packets_dropped.append(round(float(row[1]),2))
-                                elif row[0] == 'packets_served': tmp_packets_served.append(round(float(row[1]),2))
-                                elif row[0] == 'packets_total': tmp_packets_total.append(round(float(row[1]),2))
-                                elif row[0] == 'blocking_probability': tmp_blocking_probability.append(round(float(row[1]),2))
-
-                    #  Storing average data
-                    row_list = [["mean_queue_length", np.nanmean(tmp_mean_queue_length)],
-                                ["mean_system_time", np.nanmean(tmp_mean_system_time)],
-                                ["mean_throughput", np.nanmean(tmp_mean_throughput)],
-                                ["packets_dropped", np.nanmean(tmp_packets_dropped)],
-                                ["packets_served", np.nanmean(tmp_packets_served)],
-                                ["packets_total", np.nanmean(tmp_packets_total)],
-                                ["blocking_probability", np.nanmean(tmp_blocking_probability)]]
-                    filename = parent_dir + "/user_results/average_results/sim_average_slice%d_user%d.csv" % (j, user_id)
-                    with open(filename, 'w', newline='') as file:
-                        writer = csv.writer(file)
-                        writer.writerows(row_list)
-
-                    print("slice%d user%d  tp: %d" % (j, user_id, np.nanmean(tmp_mean_throughput) ))
-
-                except:
-                    print("ERROR: in exporting average results for slice %d user %d " % (j, user_id))
+                plt.savefig(filename)
+                plt.close(fig)
 
 
     # plot average slice results
@@ -308,28 +247,17 @@ def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=
         for j in range(no_of_slices):
             try:
 
-                tmp_mean_queue_length = []
-                tmp_mean_system_time = []
-                tmp_mean_throughput = []
-                tmp_packets_dropped = []
-                tmp_packets_served = []
-                tmp_packets_total = []
-                tmp_blocking_probability = []
-                for t in t_arr:
-                    filename = path + "/%d_slice%d_average_values.csv" % (t, j)
-                    with open(filename, 'rt')as f:
-                        reader = csv.reader(f)
-                        for row in reader:
-                            if row[0] == 'mean_queue_length': tmp_mean_queue_length.append(round(float(row[1]),2))
-                            elif row[0] == 'mean_system_time': tmp_mean_system_time.append(round(float(row[1]),2))
-                            elif row[0] == 'mean_throughput': tmp_mean_throughput.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_dropped': tmp_packets_dropped.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_served': tmp_packets_served.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_total': tmp_packets_total.append(round(float(row[1]),2))
-                            elif row[0] == 'blocking_probability': tmp_blocking_probability.append(round(float(row[1]),2))
+                filename = path + "/slice%d_avg_data.csv" % j
+                df = pd.read_csv(filename, header=0, index_col=0)
+                tmp_mean_queue_length = df.loc['mean_queue_length'].to_numpy()
+                tmp_mean_system_time = df.loc['mean_system_time'].to_numpy()
+                tmp_mean_throughput = df.loc['mean_throughput'].to_numpy()
+                tmp_packets_total = df.loc['packets_total'].to_numpy()
+                tmp_packets_served = df.loc['packets_served'].to_numpy()
+                tmp_packets_dropped = df.loc['packets_dropped'].to_numpy()
+                tmp_blocking_probability = df.loc['blocking_probability'].to_numpy()
 
-
-                fig, axes = pyplot.subplots(4, 2, figsize=(12, 20))
+                fig, axes = plt.subplots(4, 2, figsize=(12, 20))
                 tmp_data = tmp_mean_queue_length
                 tmp_plot = axes[0,0]
                 tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
@@ -399,51 +327,8 @@ def plot_results(parent_dir, no_of_slices=2, no_of_users_per_slice=2, sim_param=
                 axes[3,1].set_xlabel('time')
                 axes[0,0].set_xlabel('time')
                 filename = parent_dir + "/slice_results/average_results/plot_slice%d_average_values.png" % j
-                pyplot.savefig(filename)
-                pyplot.close(fig)
+                plt.savefig(filename)
+                plt.close(fig)
 
             except:
                 print("ERROR: in plotting average results for slice %d " % j)
-
-    # export simulation average results for each slices
-    if export_sim_avg:
-        path = parent_dir + "/slice_results/average_results/data"
-        t_arr = np.arange(t_c,t_final+t_c,t_c)
-        for j in range(no_of_slices):
-            try:
-                tmp_mean_queue_length = []
-                tmp_mean_system_time = []
-                tmp_mean_throughput = []
-                tmp_packets_dropped = []
-                tmp_packets_served = []
-                tmp_packets_total = []
-                tmp_blocking_probability = []
-                for t in t_arr:
-                    filename = path + "/%d_slice%d_average_values.csv" % (t, j)
-                    with open(filename, 'rt')as f:
-                        reader = csv.reader(f)
-                        for row in reader:
-                            if row[0] == 'mean_queue_length': tmp_mean_queue_length.append(round(float(row[1]),2))
-                            elif row[0] == 'mean_system_time': tmp_mean_system_time.append(round(float(row[1]),2))
-                            elif row[0] == 'mean_throughput': tmp_mean_throughput.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_dropped': tmp_packets_dropped.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_served': tmp_packets_served.append(round(float(row[1]),2))
-                            elif row[0] == 'packets_total': tmp_packets_total.append(round(float(row[1]),2))
-                            elif row[0] == 'blocking_probability': tmp_blocking_probability.append(round(float(row[1]),2))
-
-                #  Storing average data
-                row_list = [["mean_queue_length", np.nanmean(tmp_mean_queue_length)],
-                            ["mean_system_time", np.nanmean(tmp_mean_system_time)],
-                            ["mean_throughput", np.nanmean(tmp_mean_throughput)],
-                            ["packets_dropped", np.nanmean(tmp_packets_dropped)],
-                            ["packets_served", np.nanmean(tmp_packets_served)],
-                            ["packets_total", np.nanmean(tmp_packets_total)],
-                            ["blocking_probability", np.nanmean(tmp_blocking_probability)]]
-                filename = parent_dir + "/slice_results/average_results/sim_average_slice%d.csv" % j
-                with open(filename, 'w', newline='') as file:
-                    writer = csv.writer(file)
-                    writer.writerows(row_list)
-
-            except:
-                print("ERROR: in exporting average results for slice %d " % j)
-

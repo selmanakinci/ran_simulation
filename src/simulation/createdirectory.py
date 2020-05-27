@@ -57,7 +57,7 @@ def create_dir(sim_param):
         os.makedirs(path)
 
     directory1 = "slice_results"
-    directory2 = "tp"
+    '''directory2 = "tp"
     path = os.path.join(parent_dir, directory1, directory2)
     if not os.path.exists(path):
         os.makedirs(path)
@@ -70,7 +70,7 @@ def create_dir(sim_param):
     directory2 = "delay"
     path = os.path.join(parent_dir, directory1, directory2)
     if not os.path.exists(path):
-        os.makedirs(path)
+        os.makedirs(path)'''
 
     directory2 = "average_results"
     path = os.path.join(parent_dir, directory1, directory2)

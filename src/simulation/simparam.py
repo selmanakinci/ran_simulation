@@ -9,8 +9,10 @@ class SimParam(object):
     def __init__(self):
 
         # initial parameters
-        self.no_of_slices = 3
-        self.no_of_users_per_slice = 2
+        self.no_of_slices = 2
+        self.no_of_users_per_slice = 1
+
+
 
         # Functional Flags
         self.cts_service = True  # serve packets continuously or start on the next slot
@@ -23,15 +25,15 @@ class SimParam(object):
 
         # Packet properties# Read slice results for plotting comparison
         # path = "baseline comparison data/08-03-2020 cts_off"
-        self.P_SIZE = 100*100#1*1000*8  # 1kB in bits
+        self.P_SIZE = 1000*2#1*1000*8  # 1kB in bits
 
         self.max_buffer_size = 10 # max buffer length in packets
 
         # inter-arrival-time, simulation time and local_scheduler granularity in ms
         self.MEAN_IAT = 1     # mean inter arrival time
         #self.MEAN_CG = 1        # mean channel gain value
-        self.T_FINAL = 2000     # in ms
-        self.T_C = 1          # controller period, round period
+        self.T_FINAL = 5     # in ms
+        self.T_C = 1        # controller period, round period
         self.T_SM = 1
         self.T_S = 1
 
@@ -42,7 +44,7 @@ class SimParam(object):
         self.ALPHA_C = .1
 
         # all resource blocks
-        self.RB_pool = list(range(20))  # [0, 1, 2, 3, 4, 5]
+        self.RB_pool = list(range(1))  # [0, 1, 2, 3, 4, 5]
 
         # Channel Model Parameters
         self.FREQ = 2*1e9  # 2GHz
@@ -64,3 +66,8 @@ class SimParam(object):
         Print a basic system configuration string.
         """
         print("Simulation with parameters: T_SIM = " + str(self.T_C) + ", S = " + str(self.S))
+
+    def update_timestamp(self):
+        # timestamp
+        now = datetime.now()
+        self.timestamp = now.strftime("%Y_%m_%d_%H%M%S")

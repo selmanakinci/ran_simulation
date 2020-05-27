@@ -10,6 +10,7 @@ import time
 #if __name__ == '__main__':
 def main(alpha, beta, gamma):
     t0= time.time()
+    t_tmp  = t0
     no_of_rb = 20
     no_of_slices = 3
 
@@ -24,9 +25,10 @@ def main(alpha, beta, gamma):
     env = gym.make('ransim-v0')
     score_history = []
     score = 0
-    num_episodes = 50
+    num_episodes = 500
     for i in range(num_episodes):
-        print('episode: ', i,'score: %.3f' % score)
+        elapsed_time = time.time() - t_tmp
+        print('episode: ', i,'score: %.3f  time: %d' % (score,elapsed_time))
         t_tmp = time.time()
 
         #if i>1000:
@@ -53,7 +55,7 @@ def main(alpha, beta, gamma):
 
             observation_, reward, done, info = env.step(action)
 
-            if done:
+            if done & (i%10 ==1):
                 env.plot()
 
             agent0.learn(observation, reward[0], observation_, done)
