@@ -5,7 +5,7 @@ from gym.utils import seeding
 #import sys
 #sys.path.insert(1, '/home/lkn/GitRepositories/ran_simulation/src/simulation')
 
-from counter import TimeIndependentCounter
+#from counter import TimeIndependentCounter
 #from slicesimulation import SliceSimulation
 from trafficgenerator import TrafficGenerator
 #from sliceparam import SliceParam
@@ -15,7 +15,7 @@ from controller import Controller
 from datetime import datetime
 from createdirectory import create_dir
 from initialize_slices import initialize_slices
-from numpy import savetxt
+#from numpy import savetxt
 import numpy as np
 #from rng import RNG, ExponentialRNS, UniformRNS
 from pandas import DataFrame
@@ -35,19 +35,19 @@ class RanSimEnv(gym.Env):
     no_of_timeslots = int(sim_param.T_C / sim_param.T_S)
 
     # state space limits
-    '''# method1 ql
+    # method1 ql
     max_buffer_size = sim_param.max_buffer_size
     high = np.array([max_buffer_size]*no_of_slices) # max buffer size * no_of_slices
-    low = np.array([0, 0, 0])
-    self.observation_space = spaces.Box(low, high, dtype=np.float32)'''
-    # method2 CQI data
+    low = np.array([0]*no_of_slices)
+    self.observation_space = spaces.Box(low, high, dtype=np.float32)
+    '''# method2 CQI data
     len_of_CQI_data = no_of_slices*no_of_users_per_slice*no_of_rb*no_of_timeslots
     high = np.array([np.inf]*len_of_CQI_data)
     low = np.array([0]*len_of_CQI_data)
-    self.observation_space = spaces.Box(low, high, dtype=np.float32)
+    self.observation_space = spaces.Box(low, high, dtype=np.float32)'''
 
     # action space limits
-    ''' # method1 multiagent 
+    ''' # method1 multiagent
     self.action_space = spaces.MultiDiscrete(no_of_slices*[[no_of_rb] * no_of_timeslots]) # no_of_slices* no of rb * no_of_timeslots'''
     # method2 sibgle agent : no_of_slices ** no_of_rb
     self.action_space = spaces.Discrete(no_of_slices**no_of_rb)
@@ -74,14 +74,14 @@ class RanSimEnv(gym.Env):
         #slice_results[i].append(slices[i].simulate_one_round())
 
     # get next state
-    '''method1: queue_lenghts
+    # method1: queue_lenghts
     for i in range(len(slices)):
         tmp_state = 0
         for srv in slices[i].server_list:
             tmp_state += srv.get_queue_length()
-        self.state[i]=tmp_state'''
+        self.state[i]=tmp_state
 
-    # method 2 get CQI data
+    '''# method 2 get CQI data
     # get CQI matrix
     CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
 
@@ -92,7 +92,7 @@ class RanSimEnv(gym.Env):
         else:
             return 1
     observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
-    self.state = observations_arr
+    self.state = observations_arr'''
 
     # check done
     if slices[0].sim_state.now == self.sim_param.T_FINAL:
@@ -102,7 +102,7 @@ class RanSimEnv(gym.Env):
     done = bool(done)
 
     # calculate reward
-    '''# method1:   1slice 1 agent
+    '''# method1:   each slice 1 agent
     reward_arr = np.zeros(len(slices))
     for i in range(len(slices)):
         reward_arr[i] = slices[i].slice_result.mean_throughput/ self.sim_param.P_SIZE
@@ -134,7 +134,7 @@ class RanSimEnv(gym.Env):
       # initialize SD_RAN_Controller
       self.SD_RAN_Controller = Controller(self.sim_param)
 
-      # get CQI matrix
+      '''# get CQI matrix
       CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
 
       # get observation from CQI_data
@@ -143,9 +143,9 @@ class RanSimEnv(gym.Env):
               return sum(recursive_len(subitem) for subitem in item)
           else:
               return 1
-      observations_arr = np.array(np.reshape(CQI_data, (1,recursive_len(CQI_data))))
-
-      self.state = observations_arr# np.array([0,0,0])
+      observations_arr = np.array(np.reshape(CQI_data, (1,recursive_len(CQI_data))))'''
+      #self.state = observations_arr
+      self.state = np.array([0]* self.sim_param.no_of_slices)
       return np.array(self.state)
 
   def plot(self):

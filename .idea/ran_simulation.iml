@@ -12,7 +12,7 @@
       <excludeFolder url="file://$MODULE_DIR$/results" />
       <excludeFolder url="file://$MODULE_DIR$/src/sim" />
     </content>
-    <orderEntry type="jdk" jdkName="3.6 @ Ubuntu 18.04" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.6 (spinningup)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

@@ -19,9 +19,12 @@ def main(alpha, beta, gamma):
     no_of_timeslots = int(sim_param.T_C / sim_param.T_S)
 
     # state space :
-    n_states = no_of_slices * no_of_users_per_slice * no_of_rb * no_of_timeslots
+    #n_states = no_of_slices * no_of_users_per_slice * no_of_rb * no_of_timeslots
+    n_states = no_of_slices
+
     # action space : #_slices ^ #_rb
     n_actions = no_of_slices ** no_of_rb
+
     agent = Agent(alpha=alpha, beta=beta, input_dims=[n_states], gamma=gamma,
                   n_actions=n_actions, layer1_size=32, layer2_size=32)
 
@@ -42,7 +45,7 @@ def main(alpha, beta, gamma):
 
     score_history = []
     score = 0
-    num_episodes = 5000
+    num_episodes = 50
     t0 = time.time()
     for i in range(num_episodes):
         t_tmp = time.time()
@@ -56,7 +59,7 @@ def main(alpha, beta, gamma):
         parameters = Parameters()
         parameters.SEED_IAT = 0
         parameters.SEED_SHADOWING = 0
-        if (i%1000 ==0):
+        if (i%10 ==0):
             NO_logging = 0
         else:
             NO_logging = 1
@@ -68,7 +71,7 @@ def main(alpha, beta, gamma):
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
 
-            if done & (i%1000 ==0):
+            if done & (i%10 ==0):
                 env.plot()
 
             agent.learn(observation, reward, observation_, done)
