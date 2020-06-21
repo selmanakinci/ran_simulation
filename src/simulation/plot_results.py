@@ -34,7 +34,7 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
         filename = path + "data/rb_allocation.csv"
         df = pd.read_csv(filename)
 
-        fig = plt.figure(figsize=(sim_param.T_FINAL / 5, 6))
+        fig = plt.figure(figsize=(sim_param.T_FINAL/100, 5), dpi=100)
         im = plt.imshow(df.values, origin='lower', aspect='auto', interpolation='none')
         ax = plt.gca()
         xticks = np.arange(0, sim_param.T_FINAL, 50)
@@ -66,7 +66,7 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
             filename = path + "data/slice%d_rb_allocation.csv" % (i)
             df = pd.read_csv(filename)
 
-            fig = plt.figure(figsize=(sim_param.T_FINAL/5, 6))
+            fig = plt.figure(figsize=(sim_param.T_FINAL/100, 5), dpi=100)
             im = plt.imshow(df.values,origin='lower' , aspect='auto',interpolation='none')
             ax = plt.gca()
             xticks = np.arange(0,sim_param.T_FINAL,50)

@@ -28,7 +28,7 @@ def main(alpha, beta, gamma):
     agent = Agent(alpha=alpha, beta=beta, input_dims=[n_states], gamma=gamma,
                   n_actions=n_actions, layer1_size=32, layer2_size=32)
 
-    env = gym.make('ransim-v0')
+    env = gym.make('ransim-v1')
 
     # run baseline algorithm
     baseline_score = 0
@@ -45,7 +45,7 @@ def main(alpha, beta, gamma):
 
     score_history = []
     score = 0
-    num_episodes = 50
+    num_episodes = 250
     t0 = time.time()
     for i in range(num_episodes):
         t_tmp = time.time()
@@ -59,7 +59,7 @@ def main(alpha, beta, gamma):
         parameters = Parameters()
         parameters.SEED_IAT = 0
         parameters.SEED_SHADOWING = 0
-        if (i%10 ==0):
+        if (i%50 ==0):
             NO_logging = 0
         else:
             NO_logging = 1
@@ -71,7 +71,7 @@ def main(alpha, beta, gamma):
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
 
-            if done & (i%10 ==0):
+            if done & (i%50 ==0):
                 env.plot()
 
             agent.learn(observation, reward, observation_, done)

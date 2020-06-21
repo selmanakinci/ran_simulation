@@ -149,7 +149,7 @@ class ChannelModal(object):
         """
         t_s = self.user.sim_param.T_S
         #t_temp = packet.slicesim.sim_state.now # - packet.slicesim.sim_state.t_round_start)
-        t_temp = packet.t_start
+        t_temp = packet.t_last_start
         t_arr = np.arange(t_temp, t_temp + t_s)
         RB_arr = packet.server.RB_list
         r_temp = self.get_load_change(RB_arr, t_arr)
@@ -245,7 +245,7 @@ class ChannelModal(object):
         """
         Only when service is completed, counts just service completions
         """
-        t_start = packet.t_start# int(round(packet.t_arrival + (packet.d_wait + packet.d_served)))  # starting time of latest serve
+        t_start = packet.t_last_start# int(round(packet.t_arrival + (packet.d_wait + packet.d_served)))  # starting time of latest serve
         t_arr = np.arange(t_start, packet.slicesim.sim_state.now)
 
         if packet.slicesim.sim_state.now-t_start != 0:

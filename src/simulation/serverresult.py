@@ -24,6 +24,8 @@ class ServerResult(object):
         self.packets_accepted = 0   # no of accepted packets
         self.packets_served = 0     # no of packets completely served
         self.packets_arrived = 0    # no of arrived packets
+        self.packets_served_SLA_satisfied = 0  # no of packets completely served with SLA satisfaction
+
         #self.mean_waiting_time = 0
         self.mean_system_time = -1
         self.mean_queue_length = 0
@@ -60,8 +62,10 @@ class ServerResult(object):
 
             self.packets_dropped = self.server.server_state.num_blocked_packets
             self.packets_served = self.server.server_state.num_completed_packets
-            self.packets_total = self.server.server_state.num_packets
+            self.packets_arrived = self.server.server_state.num_packets
             self.blocking_probability = self.server.server_state.get_blocking_probability()
+
+            self.packets_served_SLA_satisfied = self.server.server_state.num_completed_packets_SLA_satisfied
 
             '''# Storing average data
             row_list = [["mean_queue_length", self.mean_queue_length],
@@ -70,7 +74,7 @@ class ServerResult(object):
                         ["mean_throughput2", self.mean_throughput2],
                         ["packets_dropped", self.packets_dropped],
                         ["packets_served", self.packets_served],
-                        ["packets_total", self.packets_total],
+                        ["packets_arrived", self.packets_total],
                         ["blocking_probability", self.blocking_probability]]
             filename = parent_dir + common_name + "average_values.csv"
             with open(filename, 'w', newline='') as file:
@@ -79,7 +83,7 @@ class ServerResult(object):
 
             # Storing data with dataframe
             time = self.server.slicesim.sim_state.now
-            self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_throughput, self.mean_throughput2, self.packets_dropped, self.packets_served, self.packets_total, self.blocking_probability]
+            self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_throughput, self.mean_throughput2, self.packets_dropped, self.packets_served, self.packets_arrived, self.blocking_probability]
 
         except:
             print("ERROR: Server Result.gather_results()_slice%d_user_%d is empty. " % (self.server.slicesim.slice_param.SLICE_ID, self.server.user.user_id))

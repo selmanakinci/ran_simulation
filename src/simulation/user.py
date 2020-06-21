@@ -19,7 +19,7 @@ class User(object):
         self.user_id = user_id
         self.slice_list = slice_list
         self.sim_param = sim_param
-        self.distance = dist #np.random.uniform(self.sim_param.dist_range)
+        self.distance = dist # np.random.uniform(self.sim_param.dist_range)
         if self.sim_param.cts_service:
             self.channel = ChannelModalCts(self)
         else:

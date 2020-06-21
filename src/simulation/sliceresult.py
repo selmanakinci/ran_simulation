@@ -22,13 +22,16 @@ class SliceResult(object):
         # self.system_utilization = 0
         self.packets_dropped = 0
         self.packets_served = 0
-        self.packets_total = 0
+        self.packets_arrived = 0
+        self.packets_served_SLA_satisfied = 0
         # self.mean_waiting_time = 0
         self.mean_system_time = np.NAN
         self.mean_queue_length = 0
         self.blocking_probability = 0
         self.mean_throughput = np.NAN
         self.mean_throughput2 = np.NAN
+
+        self.total_throughput = 0
 
         index = 'mean_queue_length mean_system_time mean_throughput mean_throughput2 packets_dropped packets_served packets_total blocking_probability'
         self.df = pd.DataFrame(index=index.split())
@@ -62,9 +65,11 @@ class SliceResult(object):
             no_of_tp_users = 0
             no_of_tp_users2 = 0
             for i in range(len(server_results)):
-                self.packets_total += server_results[i].packets_total
+                self.packets_arrived += server_results[i].packets_arrived
                 self.packets_served += server_results[i].packets_served
                 self.packets_dropped += server_results[i].packets_dropped
+
+                self.packets_served_SLA_satisfied += server_results[i].packets_served_SLA_satisfied
 
                 self.blocking_probability += server_results[i].blocking_probability
                 self.mean_queue_length += server_results[i].mean_queue_length
@@ -76,6 +81,8 @@ class SliceResult(object):
                         self.mean_system_time += server_results[i].mean_system_time * server_results[i].packets_served
 
                 if server_results[i].mean_throughput is not np.NAN:
+                    self.total_throughput += server_results[i].mean_throughput
+
                     if self.mean_throughput is np.NAN:
                         self.mean_throughput = server_results[i].mean_throughput
                         no_of_tp_users += 1
@@ -90,6 +97,7 @@ class SliceResult(object):
                     else:
                         self.mean_throughput2 += server_results[i].mean_throughput2
                         no_of_tp_users2 += 1
+
 
             # averaging for mean values
             no_of_users = float(len(server_results))
@@ -121,7 +129,7 @@ class SliceResult(object):
 
             # Storing data with dataframe
             time = self.sim.sim_state.now
-            self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_throughput, self.mean_throughput2, self.packets_dropped, self.packets_served, self.packets_total, self.blocking_probability]
+            self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_throughput, self.mean_throughput2, self.packets_dropped, self.packets_served, self.packets_arrived, self.blocking_probability]
 
 
         except:

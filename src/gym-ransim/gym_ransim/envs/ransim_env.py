@@ -2,36 +2,38 @@ import gym
 from gym import error, spaces, utils, logger
 from gym.utils import seeding
 
-#import sys
-#sys.path.insert(1, '/home/lkn/GitRepositories/ran_simulation/src/simulation')
+# import sys
+# sys.path.insert(1, '/home/lkn/GitRepositories/ran_simulation/src/simulation')
 
-#from counter import TimeIndependentCounter
-#from slicesimulation import SliceSimulation
-from trafficgenerator import TrafficGenerator
-#from sliceparam import SliceParam
+# from counter import TimeIndependentCounter
+# from slicesimulation import SliceSimulation
+# from trafficgenerator import TrafficGenerator
+# from sliceparam import SliceParam
 from simparam import SimParam
-#from user import User
+# from user import User
 from controller import Controller
-from datetime import datetime
+# from datetime import datetime
 from createdirectory import create_dir
 from initialize_slices import initialize_slices
-#from numpy import savetxt
+# from numpy import savetxt
 import numpy as np
-#from rng import RNG, ExponentialRNS, UniformRNS
+# from rng import RNG, ExponentialRNS, UniformRNS
 from pandas import DataFrame
 from plot_results import plot_results
+
 
 class RanSimEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self):
+    def __init__(self, t_final: int = 100):
         """
         Main ran_simulation
         """
-        sim_param = SimParam()
+        sim_param = SimParam(t_final)
+
         no_of_slices = sim_param.no_of_slices
         no_of_users_per_slice = sim_param.no_of_users_per_slice
-        no_of_rb =  len(sim_param.RB_pool)
+        no_of_rb = len(sim_param.RB_pool)
         no_of_timeslots = int(sim_param.T_C / sim_param.T_S)
 
         # state space limits
@@ -41,26 +43,27 @@ class RanSimEnv(gym.Env):
         low = np.array([0]*no_of_slices)
         self.observation_space = spaces.Box(low, high, dtype=np.float32)'''
         # method2 CQI data
-        len_of_CQI_data = no_of_slices*no_of_users_per_slice*no_of_rb*no_of_timeslots
-        high = np.array([np.inf]*len_of_CQI_data)
-        low = np.array([0]*len_of_CQI_data)
+        len_of_CQI_data = no_of_slices * no_of_users_per_slice * no_of_rb * no_of_timeslots
+        high = np.array([np.inf] * len_of_CQI_data)
+        low = np.array([0] * len_of_CQI_data)
         self.observation_space = spaces.Box(low, high, dtype=np.float32)
 
         # action space limits
         ''' # method1 multiagent
         self.action_space = spaces.MultiDiscrete(no_of_slices*[[no_of_rb] * no_of_timeslots]) # no_of_slices* no of rb * no_of_timeslots'''
         # method2 sibgle agent : no_of_slices ** no_of_rb
-        self.action_space = spaces.Discrete(no_of_slices**no_of_rb)
+        self.action_space = spaces.Discrete(no_of_slices ** no_of_rb)
 
         # other attributes of ran_environment
         self.state = None
         self.sim_param = sim_param
-
+        self.C_algo = None
 
     def step(self, action):
         slices = self.slices
 
-        if action == 'baseline':
+        if self.C_algo is not None:  # action == 'baseline':
+            self.sim_param.C_ALGO = self.C_algo
             RB_mapping = self.SD_RAN_Controller.RB_allocate_to_slices(slices[0].sim_state.now, slices)
         else:
             assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
@@ -71,7 +74,7 @@ class RanSimEnv(gym.Env):
         for i in range(len(slices)):
             slices[i].prep_next_round(RB_mapping[i, :, :])
             slices[i].simulate_one_round()
-            #slice_results[i].append(slices[i].simulate_one_round())
+            # slice_results[i].append(slices[i].simulate_one_round())
 
         # get next state
         '''# method1: queue_lenghts
@@ -84,13 +87,14 @@ class RanSimEnv(gym.Env):
         # method 2 get CQI data
         # get CQI matrix
         CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
-        
+
         # get observation from CQI_data
         def recursive_len(item):
             if type(item) == list:
                 return sum(recursive_len(subitem) for subitem in item)
             else:
                 return 1
+
         observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
         self.state = observations_arr[0]
 
@@ -102,23 +106,46 @@ class RanSimEnv(gym.Env):
         done = bool(done)
 
         # calculate reward
+        def calculate_reward(self, RB_mapping):
+            # calculate SE=tp/BW
+            SE = 0
+            for i in range(len(self.slices)):
+                SE += self.slices[i].slice_result.total_throughput *1e3  # in bits
+            SE /= (self.sim_param.RB_BANDWIDTH * len(self.sim_param.RB_pool))
+            # Calculate QoE=successful_packets(QoS satisfied) / arrived_packets
+            p_arrived = 0
+            p_served = 0
+            p_served_SLA = 0
+            for i in range(len(self.slices)):
+                p_arrived += self.slices[i].slice_result.packets_arrived
+                p_served_SLA += self.slices[i].slice_result.packets_served_SLA_satisfied
+                p_served += self.slices[i].slice_result.packets_served
+            QoE: float = p_served_SLA / p_arrived if p_arrived > 0 else 0
+            a = 1/100
+            b = 1
+            reward = a * SE + b * QoE
+            #print("SE: %f QoE: %f" % (SE, QoE))
+            return reward
+
         '''# method1:   each slice 1 agent
         reward_arr = np.zeros(len(slices))
         for i in range(len(slices)):
             reward_arr[i] = slices[i].slice_result.mean_throughput/ self.sim_param.P_SIZE
         reward = reward_arr'''
-        # method2:   single agent
+        '''# method2:   single agent
         reward = 0
         for i in range(len(slices)):
-            reward += slices[i].slice_result.mean_throughput / self.sim_param.P_SIZE
+            reward += slices[i].slice_result.mean_throughput / self.sim_param.P_SIZE'''
+        # method3: DRL paper
+        reward = calculate_reward(self, RB_mapping)
 
         return np.array(self.state), reward, done, {}
 
-    def reset(self, parameters=None, NO_logging=1):
-        # insert parameters to sim_param
+    def reset(self, parameters=None, NO_logging=1, C_algo=None, **kwargs):
+        ''' # insert parameters to sim_param
         if parameters != None:
           self.sim_param.SEED_IAT = parameters.SEED_IAT
-          self.sim_param.SEED_SHADOWING = parameters.SEED_SHADOWING
+          self.sim_param.SEED_SHADOWING = parameters.SEED_SHADOWING'''
 
         '''if NO_logging:
           log_file = None
@@ -126,10 +153,20 @@ class RanSimEnv(gym.Env):
           # update timestamp amd create result directories and logfile
           self.sim_param.update_timestamp()
           log_file = create_dir(self.sim_param)'''
+
+        for key, value in kwargs.items():
+            if key == 'plot_before_reset' and value is True:
+                self.plot()
+
         log_file = None
+        self.C_algo = C_algo  # enables baseline algorithms
+
+        # update seeds ( not for baselines)
+        if C_algo is None:
+            new_seed = seeding.create_seed()
+            self.sim_param.update_seeds(new_seed)
 
         # initialize all slices
-        #self.slices, self.slice_results = initialize_slices(self.sim_param, log_file)
         self.slices = initialize_slices(self.sim_param, log_file)
 
         # initialize SD_RAN_Controller
@@ -137,16 +174,17 @@ class RanSimEnv(gym.Env):
 
         # get CQI matrix
         CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
-        
+
         # get observation from CQI_data
         def recursive_len(item):
-          if type(item) == list:
-              return sum(recursive_len(subitem) for subitem in item)
-          else:
-              return 1
-        observations_arr = np.array(np.reshape(CQI_data, (1,recursive_len(CQI_data))))
+            if type(item) == list:
+                return sum(recursive_len(subitem) for subitem in item)
+            else:
+                return 1
+
+        observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
         self.state = observations_arr[0]
-        #self.state = np.array([0]* self.sim_param.no_of_slices)
+        # self.state = np.array([0]* self.sim_param.no_of_slices)
         return np.array(self.state)
 
     def plot(self):
@@ -156,7 +194,7 @@ class RanSimEnv(gym.Env):
 
         sim_param = self.sim_param
         slices = self.slices
-        #slice_results = self.slice_results
+        # slice_results = self.slice_results
         no_of_slices = sim_param.no_of_slices
         no_of_users_per_slice = sim_param.no_of_users_per_slice
 
@@ -185,23 +223,26 @@ class RanSimEnv(gym.Env):
 
                 # tp
                 filename = parent_dir + "/tp" + common_name + "tp_data.csv"
-                df = DataFrame(np.array([cc_temp.cnt_tp.timestamps, cc_temp.cnt_tp.values, cc_temp.cnt_tp.sum_power_two]),
-                               index=['Timestamps','Values','SumPowerTwo'])
+                df = DataFrame(
+                    np.array([cc_temp.cnt_tp.timestamps, cc_temp.cnt_tp.values, cc_temp.cnt_tp.sum_power_two]),
+                    index=['Timestamps', 'Values', 'SumPowerTwo'])
                 df.to_csv(filename, header=False)
                 # tp2
                 filename = parent_dir + "/tp2" + common_name + "tp2_data.csv"
-                df = DataFrame(np.array([cc_temp.cnt_tp2.timestamps, cc_temp.cnt_tp2.values, cc_temp.cnt_tp2.sum_power_two]),
-                               index=['Timestamps','Values','SumPowerTwo'])
+                df = DataFrame(
+                    np.array([cc_temp.cnt_tp2.timestamps, cc_temp.cnt_tp2.values, cc_temp.cnt_tp2.sum_power_two]),
+                    index=['Timestamps', 'Values', 'SumPowerTwo'])
                 df.to_csv(filename, header=False)
                 # ql
                 filename = parent_dir + "/ql" + common_name + "ql_data.csv"
-                df = DataFrame(np.array([cc_temp.cnt_ql.timestamps, cc_temp.cnt_ql.values, cc_temp.cnt_ql.sum_power_two]),
-                               index=['Timestamps','Values','SumPowerTwo'])
+                df = DataFrame(
+                    np.array([cc_temp.cnt_ql.timestamps, cc_temp.cnt_ql.values, cc_temp.cnt_ql.sum_power_two]),
+                    index=['Timestamps', 'Values', 'SumPowerTwo'])
                 df.to_csv(filename, header=False)
                 # system time (delay)
                 filename = parent_dir + "/delay" + common_name + "delay_data.csv"
                 df = DataFrame(np.array([cc_temp.cnt_syst.timestamps, cc_temp.cnt_syst.values]),
-                               index=['Timestamps','Values'])
+                               index=['Timestamps', 'Values'])
                 df.to_csv(filename, header=False)
                 # Find how to insert histograms
             print_data = print_data + " | "
@@ -222,7 +263,7 @@ class RanSimEnv(gym.Env):
             mean_df = df.mean(axis=1)
             mean_df.to_csv(filename, header=True)
             # print mean tp/p_size
-            print_data = print_data + "%.2f " % (mean_df.loc['mean_throughput']/sim_param.P_SIZE)
+            print_data = print_data + "%.2f " % (mean_df.loc['mean_throughput'] / sim_param.P_SIZE)
         print(print_data)
 
         # Store Slice manager allocation dataframe

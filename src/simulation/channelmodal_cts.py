@@ -4,54 +4,40 @@ from rng import RNG, ExponentialRNS, UniformRNS, NormalRNS
 
 
 class ChannelModalCts(object):
-
     """
-
     """
-
     def __init__(self, user):
         """
-        R
         """
-
         self.user = user
         self.RB_pool = user.sim_param.RB_pool
-        #self.rng = RNG(ExponentialRNS(1. / float(user.sim_param.MEAN_CG), user.sim_param.SEED_CG), s_type='cg')
-        #self.rng = RNG(UniformRNS(2*float(user.sim_param.MEAN_CG), 0., user.sim_param.SEED_CG), s_type='cg')
-        #self.rng = RNG(ExponentialRNS(1. / float(user.sim_param.MEAN_CG), user.user_id), s_type='cg')
-        #self.rng = RNG(UniformRNS(2. , 0., 21), s_type='cg')
+        '''self.rng = RNG(ExponentialRNS(1. / float(user.sim_param.MEAN_CG), user.sim_param.SEED_CG), s_type='cg')
+        # self.rng = RNG(UniformRNS(2*float(user.sim_param.MEAN_CG), 0., user.sim_param.SEED_CG), s_type='cg')
+        # self.rng = RNG(ExponentialRNS(1. / float(user.sim_param.MEAN_CG), user.user_id), s_type='cg')
+        # self.rng = RNG(UniformRNS(2. , 0., 21), s_type='cg')
         # self.channel_gains = (user.user_id%2+0.1)*self.rng.get_cg(len(self.RB_pool), user.sim_param.T_FINAL + user.sim_param.T_C)
-
         #self.channel_gains = np.random.rand(len(self.RB_pool), user.sim_param.T_FINAL+user.sim_param.T_C)
-        #self.channel_gains = np.ones((len(self.RB_pool), user.sim_param.T_FINAL + user.sim_param.T_C))
+        #self.channel_gains = np.ones((len(self.RB_pool), user.sim_param.T_FINAL + user.sim_param.T_C))'''
 
-        # Rayleigh Fading:
-        # self.rayleigh_envelope = GenerateRayleighEnvelope(self.RB_pool, user.sim_param.T_FINAL, user.sim_param.T_S, fm=10)
-
-        # New channel model rate = BW * log2(1+SINR)
-        # SNR(dB) = Pt-PL-P_noise,
-        #self.pathloss_dB = self.get_pathloss()
         self.noise_per_rb_dBm = self.get_noise_per_rb()
-        #self.SINR_dB = self.user.sim_param.P_TX_dBm - self.pathloss_dB - self.noise_per_rb_dBm
 
-        #seed_shadowing = self.user.user_id  # % self.user.sim_param.no_of_users_per_slice
-        #self.rng_shadowing = RNG(NormalRNS(0, self.user.sim_param.SIGMA_shadowing, seed_shadowing), s_type='shadowing')
-        #self.shadowing = self.rng_shadowing.get_shadowing(user.sim_param.T_FINAL)
+        # seed_shadowing = self.user.user_id  # % self.user.sim_param.no_of_users_per_slice
+        # self.rng_shadowing = RNG(NormalRNS(0, self.user.sim_param.SIGMA_shadowing, seed_shadowing), s_type='shadowing')
+        # self.shadowing = self.rng_shadowing.get_shadowing(user.sim_param.T_FINAL)
         self.shadowing = self.get_shadowing()
 
     def get_shadowing(self):
         t_final = self.user.sim_param.T_FINAL*20
         shadowing = np.empty((0, t_final))
 
-        seed_shadowing = self.user.user_id * len(self.RB_pool)
+        seed_shadowing = (self.user.user_id * len(self.RB_pool)) + self.user.sim_param.SEED_SHADOWING
         for i in range(len(self.RB_pool)):
             self.rng_shadowing = RNG(NormalRNS(0, self.user.sim_param.SIGMA_shadowing, seed_shadowing), s_type='shadowing')
             temp_arr = self.rng_shadowing.get_shadowing(t_final)
             shadowing = np.append(shadowing, [temp_arr], axis=0)
             if self.user.sim_param.freq_selective:
-                seed_shadowing+=1
+                seed_shadowing += 1
         return shadowing
-
 
     def get_noise_per_rb(self):
         """
@@ -93,7 +79,6 @@ class ChannelModalCts(object):
 
         except:
             raise RuntimeError("Path loss calculation error")
-            return
 
         return pl_dB
 
@@ -114,7 +99,7 @@ class ChannelModalCts(object):
                 return 0
             for rb in rb_arr:
                 pathloss_dB = self.get_pathloss(rb, time)
-                SINR_dB = self.user.sim_param.P_TX_dBm - pathloss_dB - self.noise_per_rb_dBm
+                SINR_dB = self.user.sim_param.P_TX_dBm - pathloss_dB - self.noise_per_rb_dBm  # SNR(dB) = Pt-PL-P_noise
                 SINR = np.power(10, SINR_dB / 10)
                 rate += rb_bw * np.log2(1 + SINR)
                 #rate += 1000 # for testing each ms 1 bit is served
@@ -149,14 +134,14 @@ class ChannelModalCts(object):
         """
         RB_arr = packet.server.RB_list
         #t_s = self.user.sim_param.T_S
-        t_temp = packet.t_start
-        if (packet.t_start % 1.) == 0:
-            t_temp = packet.t_start
+        t_temp = packet.t_last_start
+        if (packet.t_last_start % 1.) == 0:
+            t_temp = packet.t_last_start
             t_arr = np.arange(t_temp, t_temp + 1)
             r_temp = self.get_load_change(RB_arr, t_arr)
         else:
-            t_1 = packet.t_start % 1.
-            t_temp = int(packet.t_start - t_1)
+            t_1 = packet.t_last_start % 1.
+            t_temp = int(packet.t_last_start - t_1)
             t_arr = np.arange(t_temp, t_temp + 1)
             r_temp0 = self.get_load_change(RB_arr, t_arr)
             r_temp = r_temp0 * (1.-t_1)/1.
@@ -258,7 +243,8 @@ class ChannelModalCts(object):
 
     def get_throughput_sc(self, packet):
         """
-        Only when service is completed
+        Only when service is completed,
+        tp in Kbps
         """
         t_start = (packet.t_arrival + (packet.d_wait + packet.d_served))  # starting time of latest serve
 
@@ -270,9 +256,11 @@ class ChannelModalCts(object):
 
     def get_throughput_sc2(self, packet):
         """
-        Only when service is completed, counts just service completions
+        Only when service is completed, counts the datarate when packet is served.
+        tp in Kbps
         """
-        t_start = packet.t_start# int(round(packet.t_arrival + (packet.d_wait + packet.d_served)))  # starting time of latest serve
+        #t_start = packet.t_last_start # int(round(packet.t_arrival + (packet.d_wait + packet.d_served)))  # starting time of latest serve
+        t_start = packet.t_start
 
         if packet.slicesim.sim_state.now-t_start != 0:
             tp = float(packet.size)/float(packet.slicesim.sim_state.now-t_start)  # total served size over time

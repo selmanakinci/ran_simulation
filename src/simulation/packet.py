@@ -1,3 +1,5 @@
+from numpy import NAN
+
 class Packet(object):
 
     """
@@ -19,7 +21,7 @@ class Packet(object):
         self.server = self.slicesim.server_list_dict[self.user.user_id]
 
         self.t_arrival = slicesim.sim_state.now
-        #self.t_start = -1
+        self.t_start = NAN  # first time packet started to be served
         self.t_complete = -1
         self.d_wait = 0       # wait duration
         self.d_served = 0     # served duration
@@ -45,16 +47,17 @@ class Packet(object):
         self.server.counter_collection.count_throughput2(0.)
 
         if self.slicesim.slice_param.cts_service:
-            self.t_start = self.slicesim.sim_state.now
+            self.t_last_start = self.slicesim.sim_state.now
         else:
             if (self.slicesim.sim_state.now % self.slicesim.slice_param.T_S)==0:
-                self.t_start = self.slicesim.sim_state.now
+                self.t_last_start = self.slicesim.sim_state.now
             else:
-                self.t_start = int(round(self.slicesim.sim_state.now + self.slicesim.slice_param.T_S - (self.slicesim.sim_state.now % self.slicesim.slice_param.T_S)))  # starts on next slot
+                self.t_last_start = int(round(self.slicesim.sim_state.now + self.slicesim.slice_param.T_S - (self.slicesim.sim_state.now % self.slicesim.slice_param.T_S)))  # starts on next slot
 
-        t_system = self.t_start - self.t_arrival
+        t_system = self.t_last_start - self.t_arrival
         self.d_wait = self.d_wait + t_system - (self.d_wait+self.d_served)
 
+        if self.t_start is NAN: self.t_start = self.t_last_start
         # calculate estimated and occupation durations
         self.user.channel.get_serving_duration(self)
 
@@ -80,10 +83,12 @@ class Packet(object):
         t_system = self.slicesim.sim_state.now - self.t_arrival
         tp = self.user.channel.get_throughput_sc(self)       # return throughput
         self.server.counter_collection.count_throughput(tp)
-        tp2 = self.user.channel.get_throughput_sc2(self)       # return throughput 2
+        tp2 = self.user.channel.get_throughput_sc2(self)       # return throughput 2 in kbps
         self.server.counter_collection.count_throughput2(tp2)
         self.remaining_load = 0
         self.d_served = self.d_served + t_system - (self.d_wait + self.d_served)
+
+        self.SLA_satisfied = self.checkSLA(tp2, t_system)
 
     def get_remaining_load(self):
         """
@@ -128,3 +133,17 @@ class Packet(object):
             raise SystemError("Packet is not completed yet.")
         else:
             return self.t_complete - self.t_arrival
+
+    def checkSLA(self, rate, system_time):
+        """
+        Check whether packet satisfies SLA agreements of the slice
+        rate in kbps,  system_time in ms
+        """
+        delay_threshold = self.slicesim.slice_param.DELAY_THRESHOLD
+        rate_threshold = self.slicesim.slice_param.RATE_THRESHOLD
+
+        delay_verdict = True if system_time<=delay_threshold else False
+        rate_verdict = True if rate>=rate_threshold else False
+
+        return delay_verdict and rate_verdict
+

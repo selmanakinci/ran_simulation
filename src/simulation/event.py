@@ -117,8 +117,8 @@ class ServiceCompletion(SimEvent):
         Then, if the queue is not empty, the next packet is taken from the queue and served,
         hence a new service completion event is created and inserted in the event chain.
         """
-        server.complete_service()
-        server.server_state.packet_completed()
+        completed_packet = server.complete_service()
+        server.server_state.packet_completed(completed_packet.SLA_satisfied)
         if server.start_service():
             # trigger next packet
             ev = ServiceCompletion(self.slicesim, server.served_packet.t_finish)

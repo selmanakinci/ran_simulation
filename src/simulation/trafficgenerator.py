@@ -15,7 +15,7 @@ class TrafficGenerator(object):
         Generate TrafficGenerator objects and initialize variables.
         """
         self.sim_param = user.sim_param
-        seed_iat = user.user_id % user.sim_param.no_of_users_per_slice
+        seed_iat = (user.user_id % user.sim_param.no_of_users_per_slice) + user.sim_param.SEED_IAT
         self.rng = RNG(ExponentialRNS(1. / float(self.sim_param.MEAN_IAT), seed_iat), s_type='iat')
 
     def poisson_arrivals(self, slicesim):

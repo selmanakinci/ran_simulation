@@ -36,8 +36,12 @@ class SliceParam(object):
         # assigned resource blocks
         self.RB_pool = sim_param.RB_pool
 
+        # SLA thresholds
+        self.DELAY_THRESHOLD = 10
+        self.RATE_THRESHOLD = 1000
+
         # set seed for random number generation
-        self.SEED_IAT = 0
+        #self.SEED_IAT = 0
 
         # set desired utilization (rho)
         # self.RHO = .5
