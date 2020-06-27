@@ -9,7 +9,7 @@ class SimParam(object):
     def __init__(self, t_final: int = 100):
 
         # initial parameters
-        self.no_of_slices = 2
+        self.no_of_slices = 3
         self.no_of_users_per_slice = 2
 
         # Functional Flags
@@ -23,9 +23,9 @@ class SimParam(object):
 
         # Packet properties# Read slice results for plotting comparison
         # path = "baseline comparison data/08-03-2020 cts_off"
-        self.P_SIZE = 1*1000*4  # 1kB in bits
+        self.P_SIZE = 1*1000*6  # 1kB in bits
 
-        self.max_buffer_size = 5  # max buffer length in packets
+        self.max_buffer_size = 10  # max buffer length in packets
 
         # inter-arrival-time, simulation time and local_scheduler granularity in ms
         self.MEAN_IAT = 2     # mean inter arrival time in ms
@@ -36,7 +36,7 @@ class SimParam(object):
         self.T_S = 1
 
         # Controller Algorithm
-        self.C_ALGO = 'MCQI'  # 'H': Hard Slicing, 'RR': round robin, 'MCQI': max cqi, 'PF': prop. fair
+        self.C_ALGO = 'RL'  # 'H': Hard Slicing, 'RR': round robin, 'MCQI': max cqi, 'PF': prop. fair
 
         # Prop. Fair Scheduling constant for controller
         self.ALPHA_C = .1

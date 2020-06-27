@@ -37,27 +37,34 @@ class RanSimEnv(gym.Env):
         no_of_timeslots = int(sim_param.T_C / sim_param.T_S)
 
         # state space limits
-        '''# method1 ql
+        ##  -------------------------------------------------------
+        # method1 ql
         max_buffer_size = sim_param.max_buffer_size
-        high = np.array([max_buffer_size]*no_of_slices) # max buffer size * no_of_slices
-        low = np.array([0]*no_of_slices)
-        self.observation_space = spaces.Box(low, high, dtype=np.float32)'''
-        # method2 CQI data
+        high = np.array([max_buffer_size] * no_of_slices * no_of_users_per_slice)
+        low = np.array([0] * no_of_slices * no_of_users_per_slice)
+        self.observation_space = spaces.Box(low, high, dtype=np.float32)
+        ##  -------------------------------------------------------
+        '''# method2 CQI data
         len_of_CQI_data = no_of_slices * no_of_users_per_slice * no_of_rb * no_of_timeslots
         high = np.array([np.inf] * len_of_CQI_data)
         low = np.array([0] * len_of_CQI_data)
-        self.observation_space = spaces.Box(low, high, dtype=np.float32)
+        self.observation_space = spaces.Box(low, high, dtype=np.float32)'''
+        ##  -------------------------------------------------------
 
         # action space limits
-        ''' # method1 multiagent
-        self.action_space = spaces.MultiDiscrete(no_of_slices*[[no_of_rb] * no_of_timeslots]) # no_of_slices* no of rb * no_of_timeslots'''
-        # method2 sibgle agent : no_of_slices ** no_of_rb
-        self.action_space = spaces.Discrete(no_of_slices ** no_of_rb)
+        ##  -------------------------------------  method0 multi agent
+        # self.action_space = spaces.MultiDiscrete(no_of_slices*[[no_of_rb] * no_of_timeslots]) # no_of_slices* no of rb * no_of_timeslots
+        ##  -------------------------------------  method1 single agent : no_of_slices ** no_of_rb
+        # self.action_space = spaces.Discrete(no_of_slices ** no_of_rb)
+        ##  -------------------------------------  method2 single agent : no_of_rb: each digit maps rb to slice
+        self.action_space = spaces.MultiDiscrete(no_of_rb * [no_of_slices])  # no of rb
+        ##  -------------------------------------------------------
 
         # other attributes of ran_environment
         self.state = None
         self.sim_param = sim_param
         self.C_algo = None
+        self.slice_scores = None  # slice scores for reward method 3
 
     def step(self, action):
         slices = self.slices
@@ -77,14 +84,14 @@ class RanSimEnv(gym.Env):
             # slice_results[i].append(slices[i].simulate_one_round())
 
         # get next state
-        '''# method1: queue_lenghts
-        for i in range(len(slices)):
-            tmp_state = 0
-            for srv in slices[i].server_list:
-                tmp_state += srv.get_queue_length()
-            self.state[i]=tmp_state'''
-
-        # method 2 get CQI data
+        ##  -------------------------------------------------------
+        # method1: queue_lenghts
+        for slc in slices:
+            for srv in slc.server_list:
+                idx = srv.user.user_id
+                self.state[idx] = srv.get_queue_length()
+        ##  -------------------------------------------------------
+        '''# method 2 get CQI data
         # get CQI matrix
         CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
 
@@ -94,9 +101,9 @@ class RanSimEnv(gym.Env):
                 return sum(recursive_len(subitem) for subitem in item)
             else:
                 return 1
-
         observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
-        self.state = observations_arr[0]
+        self.state = observations_arr[0]'''
+        ##  -------------------------------------------------------
 
         # check done
         if slices[0].sim_state.now == self.sim_param.T_FINAL:
@@ -106,11 +113,24 @@ class RanSimEnv(gym.Env):
         done = bool(done)
 
         # calculate reward
+        ##  -------------------------------------------------------
+        '''# method 0:   each slice 1 agent
+        reward_arr = np.zeros(len(slices))
+        for i in range(len(slices)):
+            reward_arr[i] = slices[i].slice_result.mean_throughput/ self.sim_param.P_SIZE
+        reward = reward_arr'''
+        ##  -------------------------------------------------------
+        '''# method tp:   single agent
+        reward = 0
+        for i in range(len(slices)):
+            reward += slices[i].slice_result.mean_throughput / self.sim_param.P_SIZE'''
+        ##  -------------------------------------------------------
+        '''# method 1: DRL paper
         def calculate_reward(self, RB_mapping):
             # calculate SE=tp/BW
             SE = 0
             for i in range(len(self.slices)):
-                SE += self.slices[i].slice_result.total_throughput *1e3  # in bits
+                SE += self.slices[i].slice_result.total_throughput * 1e3  # in bits
             SE /= (self.sim_param.RB_BANDWIDTH * len(self.sim_param.RB_pool))
             # Calculate QoE=successful_packets(QoS satisfied) / arrived_packets
             p_arrived = 0
@@ -121,23 +141,37 @@ class RanSimEnv(gym.Env):
                 p_served_SLA += self.slices[i].slice_result.packets_served_SLA_satisfied
                 p_served += self.slices[i].slice_result.packets_served
             QoE: float = p_served_SLA / p_arrived if p_arrived > 0 else 0
-            a = 1/100
+            a = 1 / 100
             b = 1
             reward = a * SE + b * QoE
-            #print("SE: %f QoE: %f" % (SE, QoE))
+            # print("SE: %f QoE: %f" % (SE, QoE))
+            return reward
+        reward = calculate_reward(self, RB_mapping)'''
+        ##  -------------------------------------------------------
+        # method 3: scoring slices
+        def get_slice_scores():
+            # Calculate QoE=successful_packets(QoS satisfied) / arrived_packets
+            slice_scores = np.zeros([self.sim_param.no_of_slices])
+            for i in range(len(self.slices)):
+                p_arrived = self.slices[i].slice_result.packets_arrived
+                p_served_SLA = self.slices[i].slice_result.packets_served_SLA_satisfied
+                p_served = self.slices[i].slice_result.packets_served
+                QoE: float = p_served_SLA / p_arrived if p_arrived > 0 else 0
+                slice_scores[i] = QoE
+
+            # print("SE: %f QoE: %f" % (SE, QoE))
+            return slice_scores
+
+        def calculate_reward(slice_scores_):
+            score_deltas = np.subtract(slice_scores_, self.slice_scores)
+            reward = np.sum(score_deltas)
+            #print("scores: ", slice_scores_,"deltas: ", score_deltas)
             return reward
 
-        '''# method1:   each slice 1 agent
-        reward_arr = np.zeros(len(slices))
-        for i in range(len(slices)):
-            reward_arr[i] = slices[i].slice_result.mean_throughput/ self.sim_param.P_SIZE
-        reward = reward_arr'''
-        '''# method2:   single agent
-        reward = 0
-        for i in range(len(slices)):
-            reward += slices[i].slice_result.mean_throughput / self.sim_param.P_SIZE'''
-        # method3: DRL paper
-        reward = calculate_reward(self, RB_mapping)
+        slice_scores_ = get_slice_scores()
+        reward = calculate_reward(slice_scores_)
+        self.slice_scores = slice_scores_
+        ##  -------------------------------------------------------
 
         return np.array(self.state), reward, done, {}
 
@@ -154,6 +188,7 @@ class RanSimEnv(gym.Env):
           self.sim_param.update_timestamp()
           log_file = create_dir(self.sim_param)'''
 
+        # plot before reset
         for key, value in kwargs.items():
             if key == 'plot_before_reset' and value is True:
                 self.plot()
@@ -172,19 +207,27 @@ class RanSimEnv(gym.Env):
         # initialize SD_RAN_Controller
         self.SD_RAN_Controller = Controller(self.sim_param)
 
-        # get CQI matrix
-        CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
+        # get initial state
+        ##  -------------------------------------------------------
+        self.state = np.array([0] * self.sim_param.no_of_slices * self.sim_param.no_of_users_per_slice)
+        ##  -------------------------------------------------------
+        # # method 2 get CQI matrix
+        # CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
+        #
+        # # get observation from CQI_data
+        # def recursive_len(item):
+        #     if type(item) == list:
+        #         return sum(recursive_len(subitem) for subitem in item)
+        #     else:
+        #         return 1
+        #
+        # observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
+        # self.state = observations_arr[0]
+        ##  -------------------------------------------------------
 
-        # get observation from CQI_data
-        def recursive_len(item):
-            if type(item) == list:
-                return sum(recursive_len(subitem) for subitem in item)
-            else:
-                return 1
+        # initialize slice scores as 0 from reward method 3
+        self.slice_scores = np.zeros(self.sim_param.no_of_slices)
 
-        observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
-        self.state = observations_arr[0]
-        # self.state = np.array([0]* self.sim_param.no_of_slices)
         return np.array(self.state)
 
     def plot(self):

@@ -7,12 +7,16 @@ from user import User
 def initialize_slices(sim_param, log_file):
     slices = []
 
+    # SLA requirements list [RR, MCQI PF]
+    delay_thresholds = [20, 20, 20]  # ms
+    rate_thresholds = [3000, 3000, 3000]  # kbps
+
     for i in range(sim_param.no_of_slices):
         slice_param_tmp = SliceParam(sim_param)
         slice_param_tmp.SLICE_ID = i
         # SLA requirements
-        slice_param_tmp.DELAY_THRESHOLD = 10  # ms
-        slice_param_tmp.RATE_THRESHOLD = 2000  # kbps
+        slice_param_tmp.DELAY_THRESHOLD = delay_thresholds[i]
+        slice_param_tmp.RATE_THRESHOLD = rate_thresholds[i]
         slices.append(SliceSimulation(slice_param_tmp))
 
         # initialize all users with traffics and distances
@@ -30,9 +34,9 @@ def initialize_slices(sim_param, log_file):
         slices[i].insert_users(tmp_users)
 
     # Choose Slice Manager Algorithm       'PF': prop fair, 'MCQI': Max Channel Quality Index, 'RR': round-robin
-    slices[0].slice_param.SM_ALGO = 'MCQI'  # 'RR'
+    slices[0].slice_param.SM_ALGO = 'RR'
     slices[1].slice_param.SM_ALGO = 'MCQI'
-    # slices[2].slice_param.SM_ALGO = 'MCQI'#'PF'
+    slices[2].slice_param.SM_ALGO = 'PF'
 
     if log_file is None:
         pass
