@@ -40,11 +40,30 @@ class SliceResult(object):
         #self.total_throughput_x = None
         #self.total_throughput_y = None
 
+    def reset(self):
+        """
+        reset all result values before gathering
+        """
+        self.packets_dropped = 0
+        self.packets_served = 0
+        self.packets_arrived = 0
+        self.packets_served_SLA_satisfied = 0
+
+        self.mean_system_time = np.NAN
+        self.mean_queue_length = 0
+        self.blocking_probability = 0
+        self.mean_throughput = np.NAN
+        self.mean_throughput2 = np.NAN
+
+        self.total_throughput = 0
+
     def gather_results(self, server_results):
         """
         Gather all available simulation results from SimState and CounterCollection
         """
+        self.reset()
         self.server_results = server_results
+
         try:
             # # fill timestamps for total tp
             # for s in server_results:
