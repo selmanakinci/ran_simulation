@@ -15,8 +15,8 @@ def initialize_slices(sim_param, log_file):
         slice_param_tmp = SliceParam(sim_param)
         slice_param_tmp.SLICE_ID = i
         # SLA requirements
-        slice_param_tmp.DELAY_THRESHOLD = delay_thresholds[i]
-        slice_param_tmp.RATE_THRESHOLD = rate_thresholds[i]
+        slice_param_tmp.DELAY_REQ = delay_thresholds[i]
+        slice_param_tmp.RATE_REQ = rate_thresholds[i]
         slices.append(SliceSimulation(slice_param_tmp))
 
         # initialize all users with traffics and distances
@@ -35,8 +35,8 @@ def initialize_slices(sim_param, log_file):
 
     # Choose Slice Manager Algorithm       'PF': prop fair, 'MCQI': Max Channel Quality Index, 'RR': round-robin
     slices[0].slice_param.SM_ALGO = 'RR'
-    slices[1].slice_param.SM_ALGO = 'MCQI'
-    slices[2].slice_param.SM_ALGO = 'PF'
+    slices[1].slice_param.SM_ALGO = 'RR'#'MCQI'
+    slices[2].slice_param.SM_ALGO = 'RR'#'PF'
 
     if log_file is None:
         pass

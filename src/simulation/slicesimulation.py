@@ -1,7 +1,7 @@
 # coding=utf-8
 from simstate import SimState
 from server import Server
-from event import EventChain, PacketArrival, RoundTermination, ServerActivation, ServerDeactivation, RB_Allocation
+from event import EventChain, PacketArrival, PacketDrop, RoundTermination, ServerActivation, ServerDeactivation, RB_Allocation
 from sliceresult import SliceResult
 from sliceparam import SliceParam
 from slicemanager import SliceManager
@@ -106,14 +106,17 @@ class SliceSimulation(object):
             self.event_chain_slice_manager.insert(RB_Allocation(self, t))
 
         # insert packet arrivals from traffic lists of users
-        for i in self.user_list:
-            tmp = i.traffic_list_dict[self.slice_param.SLICE_ID]
+        for u in self.user_list:
+            tmp = u.traffic_list_dict[self.slice_param.SLICE_ID]
             tmp_traffic_list = filter(lambda item: (
                     self.sim_state.now <= item.timestamp < self.sim_state.now + self.slice_param.T_C),
                             tmp)
-            tmp_server = self.server_list_dict[i.user_id]
-            for j in tmp_traffic_list:
-                tmp_server.event_chain.insert(j)
+            tmp_server = self.server_list_dict[u.user_id]
+            for pa in tmp_traffic_list:
+                #t_drop = pa.timestamp + self.slice_param.DELAY_REQ
+                #pd = PacketDrop(self, t_drop)
+                tmp_server.event_chain.insert(pa)
+                #tmp_server.event_chain.insert(pd)
 
         # start simulation (run)
         while not self.sim_state.stop:
@@ -123,10 +126,6 @@ class SliceSimulation(object):
                 raise RuntimeError("ERROR: Event to server mapping error.")
 
             for e in current_events:
-                if e.timestamp == 80:
-                    msa = 3
-                if e.priority == 0:
-                    msa = 3
                 if e:
                     # if event exists and timestamps are ok, process the event
                     if self.sim_state.now <= e.timestamp:

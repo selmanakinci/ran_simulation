@@ -37,8 +37,8 @@ class SliceParam(object):
         self.RB_pool = sim_param.RB_pool
 
         # SLA thresholds
-        self.DELAY_THRESHOLD = 10
-        self.RATE_THRESHOLD = 1000
+        self.DELAY_REQ = 10
+        self.RATE_REQ = 1000
 
         # set seed for random number generation
         #self.SEED_IAT = 0

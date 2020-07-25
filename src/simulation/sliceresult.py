@@ -88,7 +88,7 @@ class SliceResult(object):
                 self.packets_served += server_results[i].packets_served
                 self.packets_dropped += server_results[i].packets_dropped
 
-                self.packets_served_SLA_satisfied += server_results[i].packets_served_SLA_satisfied
+                #self.packets_served_SLA_satisfied += server_results[i].packets_served_SLA_satisfied
 
                 self.blocking_probability += server_results[i].blocking_probability
                 self.mean_queue_length += server_results[i].mean_queue_length

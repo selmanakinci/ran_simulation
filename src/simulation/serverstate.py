@@ -15,7 +15,7 @@ class ServerState(object):
         self.num_completed_packets = 0
         self.num_blocked_packets = 0
 
-        self.num_completed_packets_SLA_satisfied = 0
+        #self.num_completed_packets_SLA_satisfied = 0
 
     def prep_next_round(self):
         """
@@ -24,13 +24,19 @@ class ServerState(object):
         self.num_packets = 0
         self.num_completed_packets = 0
         self.num_blocked_packets = 0
-        self.num_completed_packets_SLA_satisfied = 0
+        #self.num_completed_packets_SLA_satisfied = 0
 
     def packet_accepted(self):
         """
         Count a packet that has been accepted by the system (queue or server).
         """
         self.num_packets += 1
+
+    def packet_removed(self):
+        """
+        Count a packet that has been removed from the system.
+        """
+        self.num_blocked_packets += 1
 
     def packet_dropped(self):
         """
@@ -39,12 +45,12 @@ class ServerState(object):
         self.num_packets += 1
         self.num_blocked_packets += 1
 
-    def packet_completed(self, SLA_verdict:bool ):
+    def packet_completed(self):
         """
         Count a packet that has been completely served by the system.
         """
         self.num_completed_packets += 1
-        if SLA_verdict: self.num_completed_packets_SLA_satisfied += 1
+        #if SLA_verdict: self.num_completed_packets_SLA_satisfied += 1
 
     def get_blocking_probability(self):
         """

@@ -59,7 +59,7 @@ class Packet(object):
 
         if self.t_start is NAN: self.t_start = self.t_last_start
         # calculate estimated and occupation durations
-        self.user.channel.get_serving_duration(self)
+        self.user.channel.get_serving_duration2(self)
 
     def pause_service(self):
         """
@@ -69,7 +69,7 @@ class Packet(object):
         self.served = False
         t_system = self.slicesim.sim_state.now - self.t_arrival
         # calculate estimated and occupation durations
-        tp = self.user.channel.update_remaining_load(self)       # update remaining load, return throughput
+        tp = self.user.channel.update_remaining_load2(self)       # update remaining load, return throughput
         self.server.counter_collection.count_throughput(tp)
         self.d_served = self.d_served + t_system - (self.d_wait+self.d_served)
 
@@ -83,7 +83,7 @@ class Packet(object):
         t_system = self.slicesim.sim_state.now - self.t_arrival
         tp = self.user.channel.get_throughput_sc(self)       # return throughput
         self.server.counter_collection.count_throughput(tp)
-        tp2 = self.user.channel.get_throughput_sc2(self)       # return throughput 2 in kbps
+        tp2 = self.user.channel.get_throughput_sc_pauseless(self)       # return throughput 2 in kbps
         self.server.counter_collection.count_throughput2(tp2)
         self.remaining_load = 0
         self.d_served = self.d_served + t_system - (self.d_wait + self.d_served)
@@ -139,8 +139,8 @@ class Packet(object):
         Check whether packet satisfies SLA agreements of the slice
         rate in kbps,  system_time in ms
         """
-        delay_threshold = self.slicesim.slice_param.DELAY_THRESHOLD
-        rate_threshold = self.slicesim.slice_param.RATE_THRESHOLD
+        delay_threshold = self.slicesim.slice_param.DELAY_REQ
+        rate_threshold = self.slicesim.slice_param.RATE_REQ
 
         delay_verdict = True if system_time<=delay_threshold else False
         rate_verdict = True if rate>=rate_threshold else False

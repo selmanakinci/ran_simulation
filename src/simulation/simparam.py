@@ -28,7 +28,7 @@ class SimParam(object):
         self.max_buffer_size = 10  # max buffer length in packets
 
         # inter-arrival-time, simulation time and local_scheduler granularity in ms
-        self.MEAN_IAT = 5    # mean inter arrival time in ms
+        self.MEAN_IAT = 2    # mean inter arrival time in ms
         #self.MEAN_CG = 1        # mean channel gain value
         self.T_FINAL = t_final     # in ms
         self.T_C = 1        # controller period, round period
@@ -42,7 +42,7 @@ class SimParam(object):
         self.ALPHA_C = .1
 
         # all resource blocks
-        self.RB_pool = list(range(2))
+        self.RB_pool = list(range(5))
 
         # Channel Model Parameters from selected paper
         self.FREQ = 2*1e9  # 2GHz

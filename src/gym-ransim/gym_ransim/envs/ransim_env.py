@@ -124,7 +124,7 @@ class RanSimEnv(gym.Env):
                 user_ql = slices[i].server_list[j].get_queue_length()
                 ql_arr[i, j] = user_ql
 
-        self.state = (cqi_arr/1000) + ql_arr/2
+        self.state = (cqi_arr/1000) + ql_arr#/2
         #  -------------------------------------------------------
 
         # check done
@@ -232,16 +232,16 @@ class RanSimEnv(gym.Env):
             # Calculate QoE=successful_packets(QoS satisfied) / arrived_packets
             slice_scores = np.zeros(self.sim_param.no_of_slices)
             for i in range(len(slices)):
-                rate_th = slices[i].slice_param.RATE_THRESHOLD #* (self.sim_param.T_S/self.sim_param.MEAN_IAT)
-                delay_th = slices[i].slice_param.DELAY_THRESHOLD
+                rate_th = slices[i].slice_param.RATE_REQ #* (self.sim_param.T_S/self.sim_param.MEAN_IAT)
+                delay_th = slices[i].slice_param.DELAY_REQ
                 cost_tp = np.square((slices[i].slice_result.mean_throughput - rate_th)/rate_th) if slices[i].slice_result.mean_throughput < rate_th else 0
                 cost_delay = np.square((slices[i].slice_result.mean_system_time - delay_th)/delay_th) if not np.isnan(slices[i].slice_result.mean_system_time) and slices[i].slice_result.mean_system_time > delay_th else 0
                 cost_blocked = np.square(slices[i].slice_result.packets_dropped)
-                slice_scores[i] = -1*(cost_tp + cost_delay + 6*cost_blocked)
-                if slice_scores[i] < -10:
-                    print('time: %d, slice: %d ' % (self.slices[0].sim_state.now, i))
-                    if np.isnan(slices[i].slice_result.mean_system_time): print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: nan" % (cost_tp, cost_delay,cost_blocked, slices[i].slice_result.mean_throughput))
-                    else: print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: %.2f" % (cost_tp, cost_delay, cost_blocked, slices[i].slice_result.mean_throughput, slices[i].slice_result.mean_system_time))
+                slice_scores[i] = -1*(cost_tp + cost_delay + 1*cost_blocked)
+                # if slice_scores[i] < -100:
+                #     print('time: %d, slice: %d ' % (self.slices[0].sim_state.now, i))
+                #     if np.isnan(slices[i].slice_result.mean_system_time): print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: nan" % (cost_tp, cost_delay,cost_blocked, slices[i].slice_result.mean_throughput))
+                #     else: print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: %.2f" % (cost_tp, cost_delay, cost_blocked, slices[i].slice_result.mean_throughput, slices[i].slice_result.mean_system_time))
 
             return slice_scores
 

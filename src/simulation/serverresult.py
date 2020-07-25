@@ -24,7 +24,7 @@ class ServerResult(object):
         self.packets_accepted = 0   # no of accepted packets
         self.packets_served = 0     # no of packets completely served
         self.packets_arrived = 0    # no of arrived packets
-        self.packets_served_SLA_satisfied = 0  # no of packets completely served with SLA satisfaction
+        #self.packets_served_SLA_satisfied = 0  # no of packets completely served with SLA satisfaction
 
         #self.mean_waiting_time = 0
         self.mean_system_time = -1
@@ -65,7 +65,7 @@ class ServerResult(object):
             self.packets_arrived = self.server.server_state.num_packets
             self.blocking_probability = self.server.server_state.get_blocking_probability()
 
-            self.packets_served_SLA_satisfied = self.server.server_state.num_completed_packets_SLA_satisfied
+            #self.packets_served_SLA_satisfied = self.server.server_state.num_completed_packets_SLA_satisfied
 
             '''# Storing average data
             row_list = [["mean_queue_length", self.mean_queue_length],

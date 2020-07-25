@@ -108,6 +108,45 @@ class ChannelModalCts(object):
 
         return rate
 
+    def get_load_change2(self, rb_arr, t_start, t_end):
+        """
+        :return: data rate * duration of given user for given resource blocks at given time interval(float)
+        data rate is calculated separately for each ms and summed.
+        load_change in bits
+        """
+        try:
+            if t_start == t_end:
+                return 0
+
+            t0_f = int(np.floor(t_start))
+            t0_c = int(np.ceil(t_start))
+            t1_f = int(np.floor(t_end))
+            if t0_c > t1_f:     # interval within the same ms
+                assert(t0_f==t1_f)
+                data_rate = self.get_data_rate(rb_arr, t0_f)
+                duration = (t_end - t_start) * 1e-3
+                load_change = duration * data_rate
+            else:               # interval on different ms's
+                data_rate_0 = self.get_data_rate(rb_arr, t0_f)
+                duration_0 = (t0_c - t_start) * 1e-3
+                load_change_0 = duration_0 * data_rate_0
+
+                data_rate_1 = self.get_data_rate(rb_arr, t1_f)
+                duration_1 = (t_end - t1_f) * 1e-3
+                load_change_1 = duration_1 * data_rate_1
+
+                load_change_btw = 0
+                t_arr = np.arange(t0_c, t1_f, dtype=int)
+                for t in t_arr:
+                    load_change_btw += self.get_data_rate(rb_arr, t) * 1e-3
+
+                load_change = load_change_0 + load_change_1 + load_change_btw
+
+        except:
+            raise RuntimeError("Error during transmitted load calculation")
+
+        return load_change
+
     def get_load_change(self, rb_arr, time_arr):
         """
         :return: data rate * duration of given user for given resource blocks at given time array
@@ -127,6 +166,31 @@ class ChannelModalCts(object):
             raise RuntimeError("Error during transmitted load calculation")
 
         return load_change  # np.sum(self.channel_gains[rb_arr][time])  # user_id-1 for indexing
+
+    def get_serving_duration2(self, packet):
+        """
+        Change the status of the packet once the serving process starts.
+        """
+        RB_arr = packet.server.RB_list
+        try:
+            if (packet.t_last_start % 1.) == 0:
+                t_temp = packet.t_last_start + 1
+                #r_temp = self.get_load_change2(RB_arr, packet.t_last_start, t_temp)
+            else:
+                t_temp = np.ceil(packet.t_last_start)
+            load_change = self.get_load_change2(RB_arr, packet.t_last_start, t_temp)
+            load_temp = load_change
+
+            while load_temp < packet.remaining_load:
+                t_temp += 1
+                load_change = self.get_load_change2(RB_arr, t_temp-1, t_temp)
+                load_temp += load_change
+            t_last = (packet.remaining_load-(load_temp-load_change))/(load_change/1.)
+            t_est = t_temp - 1 + t_last
+            packet.t_finish_real = t_est
+            packet.t_finish = packet.t_finish_real
+        except:
+            raise RuntimeError("Error during get_serving_duration")
 
     def get_serving_duration(self, packet):
         """
@@ -164,6 +228,25 @@ class ChannelModalCts(object):
         packet.t_finish_real = t_est#+packet.slicesim.sim_state.t_round_start
         packet.t_finish = packet.t_finish_real
 
+    def update_remaining_load2(self, packet):
+        """
+        substract load change since the latest serving from remaining load
+        return tp = load_change / duration
+        """
+        RB_arr = packet.server.RB_list  # function is called before RB_list is changed
+        t_start = (packet.t_arrival + (packet.d_wait + packet.d_served))  # starting time of latest serve
+        load_change = self.get_load_change2(RB_arr, t_start, packet.slicesim.sim_state.now)
+        packet.remaining_load -= load_change
+
+        if packet.remaining_load < 0:
+            raise RuntimeError("Remaining load can't be negative!")
+
+        if packet.slicesim.sim_state.now-t_start != 0:
+            tp = float(load_change) / float(packet.slicesim.sim_state.now-t_start)
+            return tp  # throughput in kilobits  per second
+        else:
+            return float(0)
+
     def update_remaining_load(self, packet):
         """
         substract load change since the latest serving from remaining load
@@ -176,13 +259,13 @@ class ChannelModalCts(object):
         if (t_start % 1) > 0.0000001:
             t_0 = (t_start % 1)
             t_1 = int(t_start - t_0)
-            t_arr = np.arange(t_1, t_1 + 1)
+            t_arr = np.arange(t_1, t_1 + 1, dtype=int)
             r_temp0 = self.get_load_change(RB_arr, t_arr) * t_0/1.
         else:
             t_1 = int(t_start)
             r_temp0 = 0
 
-        t_arr = np.arange(t_1, packet.slicesim.sim_state.now)
+        t_arr = np.arange(t_1, packet.slicesim.sim_state.now, dtype=int)
         r_temp = self.get_load_change(RB_arr, t_arr)
         packet.remaining_load -= (r_temp - r_temp0)  # rtemp0 is not received part
         if packet.remaining_load < 0:
@@ -254,7 +337,7 @@ class ChannelModalCts(object):
         else:
             return float(0)
 
-    def get_throughput_sc2(self, packet):
+    def get_throughput_sc_pauseless(self, packet):
         """
         Only when service is completed, counts the datarate when packet is served.
         tp in Kbps

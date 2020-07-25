@@ -138,7 +138,7 @@ class CounterCollection(object):
 
         The system utilization is counted as well and can be counted from the counter cnt_sys_util.
         """
-        self.cnt_ql.count(self.server.get_queue_length())
+        self.cnt_ql.count(int(self.server.get_queue_length()))
         self.hist_ql.count(self.server.get_queue_length())
 
         #if self.server.server_busy:

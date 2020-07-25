@@ -29,30 +29,47 @@ class Server(object):
         user: user object that the server belongs to
         :return: server object
         """
+        self.log = []
         self.slicesim = slicesim
         self.user = user
+
         self.event_chain = event_chain
+        self.buffer = FiniteQueue(self)
 
         self.RB_list = [-1]
         self.RB_list_previous = [-1]
-
-        # total no of resources
-        self.RB_counter = 0
+        self.RB_counter = 0  # total no of resources
 
         self.counter_collection = CounterCollection(self)
-        self.server_state = ServerState()
         self.server_result = ServerResult(self)
 
-        self.buffer = FiniteQueue(self)
+        self.server_state = ServerState()
+        self.latest_arrival = 0
         self.server_busy = False
         self.server_active = False
         self.served_packet = None
-        self.last_arrival = 0
 
     def insert_RB_list(self, RB_list):
         # copy current RB_list to previous
         self.RB_list_previous = self.RB_list
         self.RB_list = RB_list
+
+    def remove_oldest_packet(self):
+        # removes the oldest packet from server
+        if self.served_packet == None:
+            if self.buffer.is_empty():
+                raise RuntimeError("ERROR: buffer empty, cant remove the packet.")
+            else:
+                self.removed_packet = self.buffer.remove()
+        else:
+            if self.served_packet.served:
+                self.pause_service()
+                self.served_packet = None
+                if self.start_service():
+                    self.event_chain.insert(ServiceCompletion(self.slicesim, self.served_packet.t_finish))
+            else:
+                self.served_packet = None
+        self.server_state.packet_removed()
 
     def add_packet_to_server(self):
         """
@@ -62,8 +79,8 @@ class Server(object):
 
         if not self.server_busy and self.server_active:
             self.server_busy = True
-            self.served_packet = Packet(self.slicesim, self.user, self.slicesim.slice_param.P_SIZE, self.slicesim.sim_state.now - self.last_arrival)
-            self.last_arrival = self.slicesim.sim_state.now
+            self.served_packet = Packet(self.slicesim, self.user, self.slicesim.slice_param.P_SIZE, self.slicesim.sim_state.now - self.latest_arrival)
+            self.latest_arrival = self.slicesim.sim_state.now
             self.served_packet.start_service()
             return True
         else:
@@ -74,11 +91,11 @@ class Server(object):
         Try to add a packet to the buffer.
         :return: True if buffer/queue is not full and packet has been added successfully.
         """
-        if self.buffer.add(Packet(self.slicesim, self.user, self.slicesim.slice_param.P_SIZE, self.slicesim.sim_state.now - self.last_arrival)):
-            self.last_arrival = self.slicesim.sim_state.now
+        if self.buffer.add(Packet(self.slicesim, self.user, self.slicesim.slice_param.P_SIZE, self.slicesim.sim_state.now - self.latest_arrival)):
+            self.latest_arrival = self.slicesim.sim_state.now
             return True
         else:
-            self.last_arrival = self.slicesim.sim_state.now
+            self.latest_arrival = self.slicesim.sim_state.now
             return False
 
     def start_service(self):

@@ -58,6 +58,13 @@ class SimEvent(object):
 
     Contains mainly abstract methods that should be implemented in the subclasses.
     Comparison for EventChain insertion is implemented by comparing first the timestamps and then the priorities
+    Priority list:
+    0 Service Completion
+    1 Packet Drop
+    2 Server Deactivation = Server Activation
+    3 Packet Arrival
+    4 RB Allocation
+    5 Round Termination
     """
 
     def __init__(self, slicesim, timestamp):
@@ -117,12 +124,38 @@ class ServiceCompletion(SimEvent):
         Then, if the queue is not empty, the next packet is taken from the queue and served,
         hence a new service completion event is created and inserted in the event chain.
         """
+        server.log.append('sc: %.2f' % self.slicesim.sim_state.now)
         completed_packet = server.complete_service()
-        server.server_state.packet_completed(completed_packet.SLA_satisfied)
+        server.server_state.packet_completed()
+        # remove packet drop event
+        ev = PacketDrop(self.slicesim, completed_packet.t_arrival + self.slicesim.slice_param.DELAY_REQ)
+        server.event_chain.remove_event(ev)
+
         if server.start_service():
             # trigger next packet
             ev = ServiceCompletion(self.slicesim, server.served_packet.t_finish)
             server.event_chain.insert(ev)
+
+
+class PacketDrop(SimEvent):
+
+    """
+    Defines a packet drop
+    """
+
+    def __init__(self, slicesim, timestamp):
+        """
+        Create a new PacketDrop event with given execution time.
+        """
+        super(PacketDrop, self).__init__(slicesim, timestamp)
+        self.priority = 1
+
+    def process(self, server):
+        """
+        Processing procedure of a packet drop.
+        """
+        server.log.append('pd: %.2f' % self.slicesim.sim_state.now)
+        server.remove_oldest_packet()
 
 
 class PacketArrival(SimEvent):
@@ -149,18 +182,26 @@ class PacketArrival(SimEvent):
         If packet is added to the server, a service completion event is generated.
         Each customer is counted either as accepted or as dropped.
         """
-
+        server.log.append('pa: %.2f' % self.slicesim.sim_state.now)
         if server.add_packet_to_server():
             # packet is added to server and served
             ev = ServiceCompletion(self.slicesim, server.served_packet.t_finish)
             server.event_chain.insert(ev)
-            #self.slicesim.sim_state.packet_accepted()
+
+            # packet drop event is added as well
+            t_drop = self.slicesim.sim_state.now + server.slicesim.slice_param.DELAY_REQ
+            ev = PacketDrop(self.slicesim, t_drop)
+            server.event_chain.insert(ev)
+
             server.server_state.packet_accepted()
 
         else:
             if server.add_packet_to_queue():
-                # packet is added to queue
-                #self.slicesim.sim_state.packet_accepted()
+                # packet drop event is added as well
+                t_drop = self.slicesim.sim_state.now + server.slicesim.slice_param.DELAY_REQ
+                ev = PacketDrop(self.slicesim, t_drop)
+                server.event_chain.insert(ev)
+
                 server.server_state.packet_accepted()
             else:
                 #self.slicesim.sim_state.packet_dropped()
@@ -191,7 +232,7 @@ class ServerActivation(SimEvent):
         Then, if the queue is not empty, the next packet is taken from the queue and served,
         hence a new service completion event is created and inserted in the event chain.
         """
-
+        server.log.append('sa: %.2f' % self.slicesim.sim_state.now)
         if not server.server_active:
             if server.server_busy:
                 raise RuntimeError("ERROR: inactive server cant be busy.")
@@ -239,13 +280,14 @@ class ServerDeactivation(SimEvent):
         Priority of server deactivation event is set to 1.
         """
         super(ServerDeactivation, self).__init__(slicesim, timestamp)
-        self.priority = 1
+        self.priority = 2
 
     def process(self, server):
         """
         Processing procedure of a ServerDeactivation.
 
         """
+        server.log.append('sd: %.2f' % self.slicesim.sim_state.now)
         if server.server_active:
             if not server.server_busy:
                 server.deactivate_server()
@@ -255,6 +297,7 @@ class ServerDeactivation(SimEvent):
 
         # inserting new RB_list into server as changing previous one
         server.insert_RB_list([-1])
+
 
 class RB_Allocation(SimEvent):
 
@@ -276,7 +319,7 @@ class RB_Allocation(SimEvent):
 class RoundTermination(SimEvent):
 
     """
-    Defines the end of a one round (T_C).(priority = 5) least priority in EventChain
+    Defines the end of one round (T_C).(priority = 5) least priority in EventChain
     """
 
     def __init__(self, slicesim, timestamp):
