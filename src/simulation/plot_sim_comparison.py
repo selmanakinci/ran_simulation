@@ -6,10 +6,10 @@ no_of_slices=3
 no_of_users_per_slice=2
 
 # Read slice results for plotting comparison
-path = "baseline comparison data/08-03-2020 cts_off"
+path = "baseline comparison data"
+
 
 def read_sim_result(filename):
-
     with open(filename, 'rt')as f:
         reader = csv.reader(f)
         for row in reader:
@@ -28,38 +28,24 @@ def read_sim_result(filename):
             elif row[0] == 'blocking_probability':
                 bp = float(row[1])
 
-    return [mean_ql, mean_tp, mean_delay]
+    return [mean_ql, mean_tp, mean_delay, bp]
 
 try:
     RR_results = []
     for i in range(no_of_slices):
-        RR_results.append(read_sim_result(
-            (path + "/C_RR/slice_results/average_results/sim_average_slice%d.csv" %i)))  # Controller RR Slice RR
-
-    # RR_results.append(read_sim_result((path + "/C_RR/slice_results/average_results/sim_average_slice0.csv")))   # Controller RR Slice RR
-    # RR_results.append(read_sim_result((path + "/C_RR/slice_results/average_results/sim_average_slice1.csv")))   # Controller RR Slice MCQI
-    # RR_results.append(read_sim_result((path + "/C_RR/slice_results/average_results/sim_average_slice2.csv")))   # Controller RR Slice PF
+        RR_results.append(read_sim_result(path + "/C_RR/slice_results/average_results/sim_average_slice%d.csv" %i))  # Controller RR Slice RR
 except:
     pass
 try:
     MCQI_results = []
     for i in range(no_of_slices):
-        MCQI_results.append(read_sim_result(
-            (path + "/C_MCQI/slice_results/average_results/sim_average_slice%d.csv" %i)))  # Controller MCQI Slice RR
-    # MCQI_results.append(read_sim_result((path + "/C_MCQI/slice_results/average_results/sim_average_slice0.csv")))   # Controller MCQI Slice RR
-    # MCQI_results.append(read_sim_result((path + "/C_MCQI/slice_results/average_results/sim_average_slice1.csv")))   # Controller MCQI Slice MCQI
-    # MCQI_results.append(read_sim_result((path + "/C_MCQI/slice_results/average_results/sim_average_slice2.csv")))   # Controller MCQI Slice PF
+        MCQI_results.append(read_sim_result(path + "/C_MCQI/slice_results/average_results/sim_average_slice%d.csv" %i))  # Controller MCQI Slice RR
 except:
     pass
 try:
     PF_results = []
     for i in range(no_of_slices):
-        PF_results.append(read_sim_result(
-            (path + "/C_PF/slice_results/average_results/sim_average_slice%d.csv" %i)))  # Controller PF Slice RR
-
-    # PF_results.append(read_sim_result((path + "/C_PF/slice_results/average_results/sim_average_slice0.csv")))   # Controller PF Slice RR
-    # PF_results.append(read_sim_result((path + "/C_PF/slice_results/average_results/sim_average_slice1.csv")))   # Controller PF Slice MCQI
-    # PF_results.append(read_sim_result((path + "/C_PF/slice_results/average_results/sim_average_slice2.csv")))   # Controller PF Slice PF
+        PF_results.append(read_sim_result(path + "/C_PF/slice_results/average_results/sim_average_slice%d.csv" %i))  # Controller PF Slice RR
 except:
     pass
 
@@ -73,7 +59,7 @@ try:
             for j in range(no_of_users_per_slice):
                 user_id = i * no_of_users_per_slice + j
                 RR_RR_results.append(
-                    read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice%d_user%d.csv" % (i, user_id ))))
+                    read_sim_result((path + "/C_RR/user_results/average_results/data/slice%d_user%d_sim_avg_data.csv" % (i, user_id ))))
         if i==1:
             for j in range(no_of_users_per_slice):
                 user_id = i * no_of_users_per_slice + j
@@ -85,17 +71,6 @@ try:
                 RR_PF_results.append(
                     read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice%d_user%d.csv" % (i, user_id ))))
 
-    # RR_RR_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice0_user0.csv")))
-    # RR_RR_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice0_user1.csv")))
-    # RR_RR_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice0_user2.csv")))
-    # RR_MCQI_results = []
-    # RR_MCQI_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice1_user3.csv")))
-    # RR_MCQI_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice1_user4.csv")))
-    # RR_MCQI_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice1_user5.csv")))
-    # RR_PF_results = []
-    # RR_PF_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice2_user6.csv")))
-    # RR_PF_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice2_user7.csv")))
-    # RR_PF_results.append(read_sim_result((path + "/C_RR/user_results/average_results/sim_average_slice2_user8.csv")))
 except:
     pass
 try:
@@ -118,19 +93,6 @@ try:
                 user_id = i * no_of_users_per_slice + j
                 MCQI_PF_results.append(
                     read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice%d_user%d.csv" % (i, user_id ))))
-
-    # MCQI_RR_results = []
-    # MCQI_RR_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice0_user0.csv")))
-    # MCQI_RR_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice0_user1.csv")))
-    # MCQI_RR_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice0_user2.csv")))
-    # MCQI_MCQI_results = []
-    # MCQI_MCQI_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice1_user3.csv")))
-    # MCQI_MCQI_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice1_user4.csv")))
-    # MCQI_MCQI_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice1_user5.csv")))
-    # MCQI_PF_results = []
-    # MCQI_PF_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice2_user6.csv")))
-    # MCQI_PF_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice2_user7.csv")))
-    # MCQI_PF_results.append(read_sim_result((path + "/C_MCQI/user_results/average_results/sim_average_slice2_user8.csv")))
 except:
     pass
 try:
@@ -157,18 +119,6 @@ try:
                     read_sim_result(
                         (path + "/C_PF/user_results/average_results/sim_average_slice%d_user%d.csv" % (i, user_id))))
 
-    # PF_RR_results = []
-    # PF_RR_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice0_user0.csv")))
-    # PF_RR_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice0_user1.csv")))
-    # PF_RR_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice0_user2.csv")))
-    # PF_MCQI_results = []
-    # PF_MCQI_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice1_user3.csv")))
-    # PF_MCQI_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice1_user4.csv")))
-    # PF_MCQI_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice1_user5.csv")))
-    # PF_PF_results = []
-    # PF_PF_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice2_user6.csv")))
-    # PF_PF_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice2_user7.csv")))
-    # PF_PF_results.append(read_sim_result((path + "/C_PF/user_results/average_results/sim_average_slice2_user8.csv")))
 except:
     pass
 

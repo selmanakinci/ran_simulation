@@ -10,19 +10,22 @@ class TrafficGenerator(object):
 
     """
 
-    def __init__(self, user, no_seed=False):
+    def __init__(self, user):
         """
         Generate TrafficGenerator objects and initialize variables.
         """
         self.sim_param = user.sim_param
-        seed_iat = (user.user_id % user.sim_param.no_of_users_per_slice) + user.sim_param.SEED_IAT
-        self.rng = RNG(ExponentialRNS(1. / float(self.sim_param.MEAN_IAT), seed_iat), s_type='iat')
+        self.seed_iat = (user.user_id % user.sim_param.no_of_users_per_slice) + user.sim_param.SEED_IAT
+
 
     def poisson_arrivals(self, slicesim):
         """
 
         """
-        iat = self.sim_param.MEAN_IAT  # slicesim.slice_param.IAT
+        iat = slicesim.slice_param.MEAN_IAT
+        self.rng = RNG (ExponentialRNS (1. / float(iat), self.seed_iat), s_type='iat')
+
+        #iat = self.sim_param.MEAN_IAT
         t_start = slicesim.sim_state.now
         t_end = self.sim_param.T_FINAL
 
@@ -49,4 +52,21 @@ class TrafficGenerator(object):
         for i in t_arr:
             arrivals.append(PacketArrival(slicesim, i))
 
+        return arrivals
+
+    def periodic_arrivals(self, slicesim):
+        """
+
+        """
+        iat = slicesim.slice_param.MEAN_IAT
+
+        t_start = slicesim.sim_state.now
+        t_end = self.sim_param.T_FINAL
+
+        # Fixed IAT
+        t_arr = np.arange(t_start, t_end, iat)
+
+        arrivals = []
+        for i in t_arr:
+            arrivals.append(PacketArrival(slicesim, i))
         return arrivals

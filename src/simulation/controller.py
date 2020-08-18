@@ -90,8 +90,55 @@ class Controller(object):
         RB_mapping = np.zeros([len(slice_list), len(self.sim_param.RB_pool), len(t_arr)], dtype=bool)
         for i in range(no_of_rb):
             slice_idx = int(rb_dist[i])
-            RB_mapping[slice_idx, i, 0] = True
-        ##  -------------------------------------------------------
+            RB_mapping[slice_idx, i] = True
+        # # ##  -------------------------------------------------------
+        # """
+        #     method 3:  PF with trimming alpha
+        # """
+        # t_s = self.sim_param.T_S
+        # t_c = self.sim_param.T_C
+        # t_arr = np.arange(t_start, t_start + t_c, t_s)
+        # RB_mapping = np.zeros([len(slice_list), len(self.sim_param.RB_pool), len(t_arr)], dtype=bool)
+        #
+        # # Prop Fair per RB, each user has avg_ratio( only works if each slice has same amount of users)
+        # if len(self.avg_rate_pf) == 0:  # avg_rate initialization
+        #     no_of_users = len(slice_list[0].user_list)
+        #     self.avg_rate_pf = np.ones([RB_mapping.shape[0], no_of_users])  # indexing: slice,user
+        #
+        # avg_rate = self.avg_rate_pf
+        # #alpha = (action + 1)/4  # -1,1 mapped to 0,1
+        # if action==0: alpha = 0
+        # elif action==1: alpha = 0.1
+        # elif action==2: alpha = 0.5
+        # else: RuntimeError("ERROR: wrong alpha.")
+        # for j in range(RB_mapping.shape[1]):  # loop over RBs
+        #     token_slice = -1
+        #     token_user = -1
+        #     max_ratio = -1
+        #     for k in range(RB_mapping.shape[0]):  # loop over slices
+        #         for u in range(len(slice_list[k].user_list)):  # loop over users
+        #             tmp_user = slice_list[k].user_list[u]
+        #             # tmp_CQI = tmp_user.channel.channel_gains[j, t_arr[i]]  # indexing: RB,time
+        #             tmp_CQI = tmp_user.channel.get_data_rate([j], t_start)  # insert index of rb as list and time
+        #             tmp_ratio = tmp_CQI / avg_rate[k, u]  # current rate average rate ratio, indexing: slice,user
+        #             if max_ratio < tmp_ratio:
+        #                 max_ratio = tmp_ratio
+        #                 token_slice = k
+        #                 token_user = u
+        #     RB_mapping[token_slice, j] = True  # indexing: slice,RB
+        #
+        #     # updating average rates for next rb-time slot (alpha = 0.1)
+        #     for k2 in range(RB_mapping.shape[0]):  # loop over slices
+        #         for u2 in range(len(slice_list[k2].user_list)):  # loop over users
+        #             if k2 == token_slice and u2 == token_user:
+        #                 tmp_user = slice_list[k2].user_list[u2]
+        #                 # tmp_CQI = tmp_user.channel.channel_gains[j, t_arr[i]]  # indexing: RB,time
+        #                 tmp_CQI = tmp_user.channel.get_data_rate([j], t_start)  # insert index of rb as list and time
+        #                 avg_rate[k2, u2] = (1 - alpha) * avg_rate[k2, u2] + alpha * tmp_CQI
+        #             else:
+        #                 avg_rate[k2, u2] = (1 - alpha) * avg_rate[k2, u2]
+        #
+        # ##  -------------------------------------------------------
 
         # Storing data with dataframe
         RB_allocation = np.full(RB_mapping.shape[1:], np.nan, dtype=int)
@@ -130,7 +177,7 @@ class Controller(object):
                     tmp_CQI_rb = []
                     for r in self.sim_param.RB_pool:  # loop over RBs
                         data_rate = u.channel.get_data_rate([r], t)  # insert index of rb as list, time
-                        tmp_CQI = data_rate / s.slice_param.P_SIZE
+                        tmp_CQI = data_rate # / s.slice_param.P_SIZE
                         tmp_CQI_rb.append(tmp_CQI)
                     tmp_CQI_time.append(tmp_CQI_rb)
                 tmp_CQI_user.append(tmp_CQI_time)
@@ -161,99 +208,68 @@ class Controller(object):
         elif self.sim_param.C_ALGO == 'RR':
             if not isinstance(self.slices_cycle, cycle):
                 self.slices_cycle = cycle(np.arange(0, RB_mapping.shape[0]))
-            # slices_cycle = cycle(np.arange(0,RB_mapping.shape[0]))
-            for i in range(RB_mapping.shape[2]):  # loop over time
-                for j in range(RB_mapping.shape[1]):  # loop over RBs
-                    tmp_slice_idx = next(self.slices_cycle)
-                    RB_mapping[tmp_slice_idx][j][i] = True
+            for j in range(RB_mapping.shape[1]):  # loop over RBs
+                tmp_slice_idx = next(self.slices_cycle)
+                RB_mapping[tmp_slice_idx][j] = True
 
         # Max CQI
         elif self.sim_param.C_ALGO == 'MCQI':
             # CQI is calculated considering user with max CQI in a slice
-            CQI_arr = np.zeros([len(slice_list), len(self.sim_param.RB_pool), len(t_arr)])
+            CQI_arr = np.zeros([len(slice_list), len(self.sim_param.RB_pool)])
             for i in range(len(slice_list)):  # loop over slices
-                for j in range(RB_mapping.shape[2]):  # loop over time
-                    for k in range(RB_mapping.shape[1]):  # loop over RBs
-                        max_CQI = -1
-                        for u in slice_list[i].user_list:  # loop over users
-                            # tmp_CQI2 = u.channel.channel_gains[k, t_arr[j]]  # indexing: RB,time
-                            tmp_CQI = u.channel.get_data_rate([k], t_arr[j])  # insert index of rb as list, time
-                            if max_CQI < tmp_CQI:
-                                max_CQI = tmp_CQI
-                        CQI_arr[i, k, j] = max_CQI  # indexing: slice,RB,time
-
-            # For each rb and time, map rb to max valued CQI_arr values owner slice
-            for i in range(RB_mapping.shape[2]):  # loop over time
-                for j in range(RB_mapping.shape[1]):  # loop over RBs
+                for k in range(RB_mapping.shape[1]):  # loop over RBs
                     max_CQI = -1
-                    for k in range(RB_mapping.shape[0]):  # loop over slices
-                        tmp_CQI = CQI_arr[k, j, i]  # indexing: slice,RB,time
+                    for u in slice_list[i].user_list:  # loop over users
+                        # tmp_CQI2 = u.channel.channel_gains[k, t_arr[j]]  # indexing: RB,time
+                        tmp_CQI = u.channel.get_data_rate([k], t_start)  # insert index of rb as list, time
                         if max_CQI < tmp_CQI:
                             max_CQI = tmp_CQI
-                            token = k
-                    RB_mapping[token, j, i] = True  # indexing: slice,RB,time
+                    CQI_arr[i, k] = max_CQI  # indexing: slice,RB
+
+            # For each rb and time, map rb to max valued CQI_arr values owner slice
+            for j in range(RB_mapping.shape[1]):  # loop over RBs
+                max_CQI = -1
+                for k in range(RB_mapping.shape[0]):  # loop over slices
+                    tmp_CQI = CQI_arr[k, j]  # indexing: slice,RB
+                    if max_CQI < tmp_CQI:
+                        max_CQI = tmp_CQI
+                        token = k
+                RB_mapping[token, j] = True  # indexing: slice,RB
 
         # Prop Fair per RB, each user has avg_ratio( only works if each slice has same amount of users)
         elif self.sim_param.C_ALGO == 'PF':
-
             if len(self.avg_rate_pf) == 0:  # avg_rate initialization
                 no_of_users = len(slice_list[0].user_list)
                 self.avg_rate_pf = np.ones([RB_mapping.shape[0], no_of_users])  # indexing: slice,user
 
             avg_rate = self.avg_rate_pf
             alpha = self.sim_param.ALPHA_C
-            for i in range(RB_mapping.shape[2]):  # loop over time
-                for j in range(RB_mapping.shape[1]):  # loop over RBs
-                    token_slice = -1
-                    token_user = -1
-                    max_ratio = -1
-                    for k in range(RB_mapping.shape[0]):  # loop over slices
-                        for u in range(len(slice_list[k].user_list)):  # loop over users
-                            tmp_user = slice_list[k].user_list[u]
+            for j in range(RB_mapping.shape[1]):  # loop over RBs
+                token_slice = -1
+                token_user = -1
+                max_ratio = -1
+                for k in range(RB_mapping.shape[0]):  # loop over slices
+                    for u in range(len(slice_list[k].user_list)):  # loop over users
+                        tmp_user = slice_list[k].user_list[u]
+                        # tmp_CQI = tmp_user.channel.channel_gains[j, t_arr[i]]  # indexing: RB,time
+                        tmp_CQI = tmp_user.channel.get_data_rate([j], t_start)  # insert index of rb as list and time
+                        tmp_ratio = tmp_CQI / avg_rate[k, u]  # current rate average rate ratio, indexing: slice,user
+                        if max_ratio < tmp_ratio:
+                            max_ratio = tmp_ratio
+                            token_slice = k
+                            token_user = u
+                RB_mapping[token_slice, j] = True  # indexing: slice,RB
+
+                # updating average rates for next rb-time slot (alpha = 0.1)
+                for k2 in range(RB_mapping.shape[0]):  # loop over slices
+                    for u2 in range(len(slice_list[k2].user_list)):  # loop over users
+                        if k2 == token_slice and u2 == token_user:
+                            tmp_user = slice_list[k2].user_list[u2]
                             # tmp_CQI = tmp_user.channel.channel_gains[j, t_arr[i]]  # indexing: RB,time
-                            tmp_CQI = tmp_user.channel.get_data_rate([j],
-                                                                     t_arr[i])  # insert index of rb as list and time
-
-                            tmp_ratio = tmp_CQI / avg_rate[
-                                k, u]  # current rate average rate ratio, indexing: slice,user
-
-                            if max_ratio < tmp_ratio:
-                                max_ratio = tmp_ratio
-                                token_slice = k
-                                token_user = u
-                    RB_mapping[token_slice, j, i] = True  # indexing: slice,RB,time
-
-                    # updating average rates for next rb-time slot (alpha = 0.1)
-                    for k2 in range(RB_mapping.shape[0]):  # loop over slices
-                        for u2 in range(len(slice_list[k2].user_list)):  # loop over users
-                            if k2 == token_slice and u2 == token_user:
-                                tmp_user = slice_list[k2].user_list[u2]
-                                # tmp_CQI = tmp_user.channel.channel_gains[j, t_arr[i]]  # indexing: RB,time
-                                tmp_CQI = tmp_user.channel.get_data_rate([j], t_arr[
-                                    i])  # insert index of rb as list and time
-                                avg_rate[k2, u2] = (1 - alpha) * avg_rate[k2, u2] + alpha * tmp_CQI
-                            else:
-                                avg_rate[k2, u2] = (1 - alpha) * avg_rate[k2, u2]
-
-        # # plotting RB mapping
-        # fig, axes = pyplot.subplots(1, RB_mapping.shape[0], figsize=(12, 3))
-        #
-        # if RB_mapping.shape[0]==1:
-        #     axes.imshow(RB_mapping[i], aspect='auto')
-        # else:
-        #     for i in range(RB_mapping.shape[0]):
-        #         axes[i].imshow(RB_mapping[i], aspect='auto')
-        #
-        # path = "plots/" + self.sim_param.timestamp + "/controller"
-        # filename = path + "/controller_%d.png" % t_start
-        # pyplot.savefig(filename)
-        # pyplot.close(fig)
-
-        # Storing Data
-        '''path = "results/" + self.sim_param.timestamp + "/controller/data"
-        for i in range(len(slice_list)):
-            filename = path + "/RB_list_t_%d_slice_%d.csv" % (t_start,i)
-            savetxt(filename, RB_mapping[i], delimiter=',')'''
+                            tmp_CQI = tmp_user.channel.get_data_rate([j], t_start)  # insert index of rb as list and time
+                            avg_rate[k2, u2] = (1 - alpha) * avg_rate[k2, u2] + alpha * tmp_CQI
+                        else:
+                            avg_rate[k2, u2] = (1 - alpha) * avg_rate[k2, u2]
 
         # Storing data with dataframe
         RB_allocation = np.full(RB_mapping.shape[1:], np.nan, dtype=int)

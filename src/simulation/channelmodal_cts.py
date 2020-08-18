@@ -27,14 +27,18 @@ class ChannelModalCts(object):
         self.shadowing = self.get_shadowing()
 
     def get_shadowing(self):
-        t_final = self.user.sim_param.T_FINAL*20
-        shadowing = np.empty((0, t_final))
+        t_final = self.user.sim_param.T_FINAL
+        t_c = self.user.sim_param.T_C
+        t_coh = self.user.sim_param.T_COH # in ms
+        buffer = 2  # for the packets in simulation final
+        shadowing = np.empty((0, int(t_final) + t_coh * (buffer -1) ))
 
         seed_shadowing = (self.user.user_id * len(self.RB_pool)) + self.user.sim_param.SEED_SHADOWING
         for i in range(len(self.RB_pool)):
             self.rng_shadowing = RNG(NormalRNS(0, self.user.sim_param.SIGMA_shadowing, seed_shadowing), s_type='shadowing')
-            temp_arr = self.rng_shadowing.get_shadowing(t_final)
-            shadowing = np.append(shadowing, [temp_arr], axis=0)
+
+            temp_shadowing = self.rng_shadowing.get_shadowing2(t_final, t_c, t_coh, buffer)
+            shadowing = np.append(shadowing, [temp_shadowing], axis=0)
             if self.user.sim_param.freq_selective:
                 seed_shadowing += 1
         return shadowing
@@ -173,21 +177,19 @@ class ChannelModalCts(object):
         """
         RB_arr = packet.server.RB_list
         try:
-            if (packet.t_last_start % 1.) == 0:
-                t_temp = packet.t_last_start + 1
-                #r_temp = self.get_load_change2(RB_arr, packet.t_last_start, t_temp)
-            else:
-                t_temp = np.ceil(packet.t_last_start)
-            load_change = self.get_load_change2(RB_arr, packet.t_last_start, t_temp)
-            load_temp = load_change
+            t_end_temp = np.ceil (packet.t_last_start)
+            load_change = self.get_load_change2 (RB_arr, packet.t_last_start, t_end_temp)
 
-            while load_temp < packet.remaining_load:
-                t_temp += 1
-                load_change = self.get_load_change2(RB_arr, t_temp-1, t_temp)
-                load_temp += load_change
-            t_last = (packet.remaining_load-(load_temp-load_change))/(load_change/1.)
-            t_est = t_temp - 1 + t_last
-            packet.t_finish_real = t_est
+            while load_change < packet.remaining_load:
+                t_end_temp += 1
+                load_change = self.get_load_change2(RB_arr, packet.t_last_start, t_end_temp)
+
+            r_last = self.get_load_change2(RB_arr, t_end_temp-1, t_end_temp)
+            t_delta = (load_change - packet.remaining_load) / r_last
+            t_end = t_end_temp - t_delta
+
+            assert(np.isclose(packet.remaining_load , self.get_load_change2(RB_arr, packet.t_last_start, t_end)))
+            packet.t_finish_real = t_end
             packet.t_finish = packet.t_finish_real
         except:
             raise RuntimeError("Error during get_serving_duration")
@@ -243,7 +245,7 @@ class ChannelModalCts(object):
 
         if packet.slicesim.sim_state.now-t_start != 0:
             tp = float(load_change) / float(packet.slicesim.sim_state.now-t_start)
-            return tp  # throughput in kilobits  per second
+            return tp  # throughput in kilobits  per second: bits / ms
         else:
             return float(0)
 

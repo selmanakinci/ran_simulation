@@ -24,7 +24,7 @@ class ServerState(object):
         self.num_packets = 0
         self.num_completed_packets = 0
         self.num_blocked_packets = 0
-        #self.num_completed_packets_SLA_satisfied = 0
+        self.num_completed_packets_SLA_satisfied = 0
 
     def packet_accepted(self):
         """

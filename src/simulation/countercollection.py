@@ -104,14 +104,14 @@ class CounterCollection(object):
     def count_throughput(self, throughput):
         """
         Count a throughput. Its data is counted by the various counters
-        tp in bits per second
+        tp in kilobits per second
         """
         self.cnt_tp.count(throughput)
 
     def count_throughput2(self, throughput):
         """
         Count a throughput. Its data is counted by the various counters
-        tp in bits per second
+        tp in kilobits per second
         """
         self.cnt_tp2.count(throughput)
 

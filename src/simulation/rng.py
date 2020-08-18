@@ -85,6 +85,29 @@ class RNG(object):
 
         return shadowing
 
+    def get_shadowing2(self, t_final, t_c, t_coh, buffer):
+        """
+        Return a new sample of the Shadowing RNS
+        """
+        no_of_frames = int(t_final/t_coh) + buffer
+
+
+        shadowing_per_t_coh = np.zeros(no_of_frames)
+        for i in range(no_of_frames):
+            shadowing_per_t_coh[i] = self.shadowing_rns.next()
+        shadowing_per_ms = np.repeat(shadowing_per_t_coh, t_coh)
+        start_idx = self.shadowing_rns.r.randint(0, (t_coh / t_c)-1) * t_c
+        shadowing = shadowing_per_ms[start_idx:-(t_coh-start_idx)]
+
+
+        # # Plot histogram of shadowing
+        # count, bins, ignored = plt.hist(shadowing, 30, normed=True)
+        # sigma = self.shadowing_rns.sigma
+        # mu = self.shadowing_rns.mu
+        # plt.plot(bins, 1/(sigma * np.sqrt(2 * np.pi)) *np.exp( - (bins - mu)**2 / (2 * sigma**2)), linewidth=2, color='r')
+        # plt.show()
+
+        return shadowing
 
 class RNS(object):
     

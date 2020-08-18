@@ -39,21 +39,27 @@ class RanSimEnv(gym.Env):
 
         # state space limits
         #  -------------------------------------------------------
-        # method1 ql
-        max_buffer_size = sim_param.max_buffer_size
-        high = np.array([max_buffer_size] * no_of_slices * no_of_users_per_slice)
+        # method0 tp
+        # np.finfo (np.float32).max
+        high = np.array([2] * no_of_slices * no_of_users_per_slice)
         low = np.array([0] * no_of_slices * no_of_users_per_slice)
         self.observation_space = spaces.Box(low, high, dtype=np.float32)
-        #  -------------------------------------------------------
-        '''# method2 CQI data
-        len_of_CQI_data = no_of_slices * no_of_users_per_slice * no_of_rb * no_of_timeslots
-        high = np.array([np.inf] * len_of_CQI_data)
-        low = np.array([0] * len_of_CQI_data)
-        self.observation_space = spaces.Box(low, high, dtype=np.float32)'''
-        #  -------------------------------------------------------
-        # method3 CQI data multidimentional box
-        self.observation_space = spaces.Box(low=0, high=np.inf, shape=(no_of_slices,no_of_users_per_slice,no_of_timeslots, no_of_rb),dtype=np.float32)
-        #  -------------------------------------------------------
+        # #  -------------------------------------------------------
+        # # method1 ql
+        # max_buffer_size = sim_param.max_buffer_size
+        # high = np.array([max_buffer_size] * no_of_slices * no_of_users_per_slice)
+        # low = np.array([0] * no_of_slices * no_of_users_per_slice)
+        # self.observation_space = spaces.Box(low, high, dtype=np.float32)
+        # #  -------------------------------------------------------
+        # # method2 CQI data
+        # len_of_CQI_data = no_of_slices * no_of_users_per_slice * no_of_rb * no_of_timeslots
+        # high = np.array([np.inf] * len_of_CQI_data)
+        # low = np.array([0] * len_of_CQI_data)
+        # self.observation_space = spaces.Box(low, high, dtype=np.float32)
+        # # #  -------------------------------------------------------
+        # # method3 CQI data multidimentional box
+        # self.observation_space = spaces.Box(low=0, high=np.inf, shape=(no_of_slices,no_of_users_per_slice,no_of_timeslots, no_of_rb),dtype=np.float32)
+        # #  -------------------------------------------------------
 
 
         # action space limits
@@ -63,23 +69,31 @@ class RanSimEnv(gym.Env):
         # self.action_space = spaces.Discrete(no_of_slices ** no_of_rb)
         #  -------------------------------------  method2 single agent : no_of_rb: each digit maps rb to slice
         self.action_space = spaces.MultiDiscrete(no_of_rb * [no_of_slices])  # no of rb
-        #  -------------------------------------------------------
+        # #  -------------------------------------  method3 PF with trimming alpha
+        #self.action_space = spaces.Box( np.array([-1]),  np.array([1]), dtype=np.float32)
+        # self.action_space = spaces.Discrete(3)
+        # #  -------------------------------------------------------
 
         # other attributes of ran_environment
         self.state = None
         self.sim_param = sim_param
-        self.C_algo = 'RL'
+        #self.C_algo = 'RL'
         self.slice_scores = None  # slice scores for reward method 3
         self.user_scores = None
+
         self.user_score_arr = None
         self.slice_score_arr = None
+        self.reward_hist = None
+        self.cost_tp_hist = None
+        self.cost_bp_hist = None
+        self.cost_delay_hist = None
 
     def step(self, action):
         slices = self.slices
         # print("action: ", action)
 
-        if self.C_algo is not 'RL':  # action == 'baseline':
-            self.sim_param.C_ALGO = self.C_algo
+        if self.sim_param.C_ALGO is not 'RL':  # action == 'baseline':
+            #self.sim_param.C_ALGO = self.C_algo
             RB_mapping = self.SD_RAN_Controller.RB_allocate_to_slices(slices[0].sim_state.now, slices)
         else:
             assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
@@ -93,39 +107,50 @@ class RanSimEnv(gym.Env):
             # slice_results[i].append(slices[i].simulate_one_round())
 
         # get next state
+        #  -------------------------------------------------------
+        # method0 tp
+        for slc in slices:
+            tp_exp = float(slc.slice_param.P_SIZE / slc.slice_param.MEAN_IAT)
+            for srv in slc.server_list:
+                idx = srv.user.user_id
+                self.state[idx] = float(srv.server_result.mean_throughput2_mov_avg / tp_exp)
         # #  -------------------------------------------------------
-        # # method1: queue_lenghts
+        # method1: queue_lenghts
         # for slc in slices:
         #     for srv in slc.server_list:
         #         idx = srv.user.user_id
         #         self.state[idx] = srv.get_queue_length()
         # #  -------------------------------------------------------
-        '''# method 2 get CQI data
-        # get CQI matrix
-        CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
-
-        # get observation from CQI_data
-        def recursive_len(item):
-            if type(item) == list:
-                return sum(recursive_len(subitem) for subitem in item)
-            else:
-                return 1
-        observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
-        self.state = observations_arr[0]'''
-        #  -------------------------------------------------------
-        # method 3 get CQI data
-        # get CQI matrix
-        CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
-        cqi_arr = np.array(CQI_data[0])
-
-        ql_arr = np.zeros(shape=cqi_arr.shape)  # (no_of_slices,no_of_users_per_slice,no_of_timeslots, no_of_rb)
-        for i in range(len(slices)):
-            for j in range(len(slices[i].server_list)):
-                user_ql = slices[i].server_list[j].get_queue_length()
-                ql_arr[i, j] = user_ql
-
-        self.state = (cqi_arr/1000) + ql_arr#/2
-        #  -------------------------------------------------------
+        # # method 2 get CQI data
+        # # get CQI matrix
+        # CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
+        #
+        # # get observation from CQI_data
+        # def recursive_len(item):
+        #     if type(item) == list:
+        #         return sum(recursive_len(subitem) for subitem in item)
+        #     else:
+        #         return 1
+        # observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
+        # self.state = observations_arr[0]
+        # #  -------------------------------------------------------
+        # # method 3 get CQI data
+        # # get CQI matrix
+        # CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)  # bits per sec
+        # cqi_arr = np.array(CQI_data[0])
+        #
+        # ql_arr = np.zeros(shape=cqi_arr.shape)  # (no_of_slices,no_of_users_per_slice,no_of_timeslots, no_of_rb)
+        # for i in range(len(slices)):
+        #     for j in range(len(slices[i].server_list)):
+        #         user_ql = slices[i].server_list[j].get_queue_length()
+        #         ql_arr[i, j] = user_ql
+        #
+        # self.state[0] = (cqi_arr[0] / (1000*2000)) + ql_arr[0]
+        # self.state[1] = (cqi_arr[1] / (1000*10000)) + ql_arr[1]
+        # self.state[2] = (cqi_arr[2] / (1000*5000)) + ql_arr[2]
+        #
+        # # self.state = (cqi_arr/1000) + ql_arr  #/2
+        # #  -------------------------------------------------------
 
         # check done
         if slices[0].sim_state.now == self.sim_param.T_FINAL:
@@ -227,26 +252,60 @@ class RanSimEnv(gym.Env):
         # self.user_score_arr.append(user_scores_)
 
         # #  -------------------------------------------------------
-        # method 4:   squared cost
+        # # method 4_1:   squared cost ( tp2 as cost)
+        # def get_slice_scores():
+        #     # Calculate QoE=successful_packets(QoS satisfied) / arrived_packets
+        #     slice_scores = np.zeros(self.sim_param.no_of_slices)
+        #     for i in range(len(slices)):
+        #         rate_th = slices[i].slice_param.RATE_REQ #* (self.sim_param.T_S/self.sim_param.MEAN_IAT)
+        #         delay_th = slices[i].slice_param.DELAY_REQ
+        #         cost_tp = np.square((slices[i].slice_result.mean_throughput2 - rate_th)/rate_th) if slices[i].slice_result.mean_throughput2 < rate_th else 0
+        #         cost_delay = np.square((slices[i].slice_result.mean_system_time - delay_th)/delay_th) if not np.isnan(slices[i].slice_result.mean_system_time) and slices[i].slice_result.mean_system_time > delay_th else 0
+        #         cost_blocked = np.square(slices[i].slice_result.packets_dropped)
+        #         slice_scores[i] = -1*(cost_tp + cost_delay + 1*cost_blocked)
+        #         if slice_scores[i] < 0:
+        #             print('time: %d, slice: %d ' % (self.slices[0].sim_state.now, i))
+        #             if np.isnan(slices[i].slice_result.mean_system_time): print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: nan" % (cost_tp, cost_delay,cost_blocked, slices[i].slice_result.mean_throughput))
+        #             else: print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: %.2f" % (cost_tp, cost_delay, cost_blocked, slices[i].slice_result.mean_throughput, slices[i].slice_result.mean_system_time))
+        #     return slice_scores
+        # method 4_2:   squared cost ( cumulative values as cost)
         def get_slice_scores():
             # Calculate QoE=successful_packets(QoS satisfied) / arrived_packets
             slice_scores = np.zeros(self.sim_param.no_of_slices)
+            tp_hist_tmp = []
+            bp_hist_tmp = []
+            delay_hist_tmp = []
             for i in range(len(slices)):
                 rate_th = slices[i].slice_param.RATE_REQ #* (self.sim_param.T_S/self.sim_param.MEAN_IAT)
                 delay_th = slices[i].slice_param.DELAY_REQ
-                cost_tp = np.square((slices[i].slice_result.mean_throughput - rate_th)/rate_th) if slices[i].slice_result.mean_throughput < rate_th else 0
-                cost_delay = np.square((slices[i].slice_result.mean_system_time - delay_th)/delay_th) if not np.isnan(slices[i].slice_result.mean_system_time) and slices[i].slice_result.mean_system_time > delay_th else 0
-                cost_blocked = np.square(slices[i].slice_result.packets_dropped)
-                slice_scores[i] = -1*(cost_tp + cost_delay + 1*cost_blocked)
-                # if slice_scores[i] < -100:
+                cost_tp = np.square((slices[i].slice_result.mean_throughput2 - rate_th)/rate_th)  # if slices[i].slice_result.mean_throughput2 < rate_th else 0
+                cost_delay = np.square(slices[i].slice_result.mean_system_time/delay_th)
+                cost_blocked = np.square(slices[i].slice_result.blocking_probability)
+
+                # slice_scores[i] = 2 - 1 * (cost_tp + cost_blocked)
+                if i == 0:
+                    slice_scores[i] = 1 - cost_blocked
+                if i == 1:
+                    slice_scores[i] = 1 - cost_delay
+                if i == 2:
+                    slice_scores[i] = 1 - cost_delay
+
+                tp_hist_tmp.append(np.round(cost_tp,2))
+                bp_hist_tmp.append(np.round(cost_blocked,2))
+                delay_hist_tmp.append(np.round(cost_delay,2))
+                # slice_scores[i] = slices[i].slice_result.mean_cumulative_throughput2 / 4000  # -1 * (cost_tp)
+
+                # if slice_scores[i] < 0:
                 #     print('time: %d, slice: %d ' % (self.slices[0].sim_state.now, i))
                 #     if np.isnan(slices[i].slice_result.mean_system_time): print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: nan" % (cost_tp, cost_delay,cost_blocked, slices[i].slice_result.mean_throughput))
                 #     else: print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: %.2f" % (cost_tp, cost_delay, cost_blocked, slices[i].slice_result.mean_throughput, slices[i].slice_result.mean_system_time))
-
+            self.cost_tp_hist.append(tp_hist_tmp)
+            self.cost_bp_hist.append(bp_hist_tmp)
+            self.cost_delay_hist.append (delay_hist_tmp)
             return slice_scores
 
         def calculate_reward(scores_):
-            reward = np.sum(scores_)
+            reward = np.sum(scores_) /3
             # print("scores: ", slice_scores_)#,"deltas: ", score_deltas)
             return reward
 
@@ -254,36 +313,43 @@ class RanSimEnv(gym.Env):
         reward = calculate_reward(slice_scores_)
         self.slice_scores = slice_scores_
         self.slice_score_arr.append(slice_scores_)
+        self.reward_hist.append(reward)
         #  -------------------------------------------------------
 
         return np.array(self.state), reward, done, {}
 
-    def reset(self, parameters=None, NO_logging=1, C_algo='RL', **kwargs):
+    def reset(self, **kwargs):
         ''' # insert parameters to sim_param
         if parameters != None:
           self.sim_param.SEED_IAT = parameters.SEED_IAT
-          self.sim_param.SEED_SHADOWING = parameters.SEED_SHADOWING'''
+          self.sim_param.SEED_SHADOWING = parameters.SEED_SHADOWING
 
-        '''if NO_logging:
+        if NO_logging:
           log_file = None
         else:
           # update timestamp amd create result directories and logfile
           self.sim_param.update_timestamp()
           log_file = create_dir(self.sim_param)'''
 
+        log_file = None
+        #self.C_algo = C_algo  # enables baseline algorithms
+        #self.sim_param.C_ALGO = C_algo
+
+        # update seeds ( not for baselines)
+        # if C_algo is 'RL':
+        new_seed = seeding.create_seed()
+        self.sim_param.update_seeds(new_seed)
+
         # plot before reset
+        for key, value in kwargs.items():
+            if key == 'env_seed':
+                self.sim_param.update_seeds(value)
+            if key == 'C_ALGO':
+                self.sim_param.C_ALGO = value
         for key, value in kwargs.items():
             if key == 'plot_before_reset' and value is True:
                 self.plot()
 
-        log_file = None
-        self.C_algo = C_algo  # enables baseline algorithms
-        self.sim_param.C_ALGO = C_algo
-
-        # update seeds ( not for baselines)
-        if C_algo is 'RL':
-            new_seed = seeding.create_seed()
-            self.sim_param.update_seeds(new_seed)
 
         # initialize all slices
         self.slices = initialize_slices(self.sim_param, log_file)
@@ -292,10 +358,13 @@ class RanSimEnv(gym.Env):
         self.SD_RAN_Controller = Controller(self.sim_param)
 
         # get initial state
-        ##  -------------------------------------------------------
+        #  -------------------------------------------------------
+        # method 0 tp2
+        self.state = np.array([0] * self.sim_param.no_of_slices * self.sim_param.no_of_users_per_slice, dtype=np.float32)
+        #  -------------------------------------------------------
         # # method 1 queue_lenghts
         # self.state = np.array([0] * self.sim_param.no_of_slices * self.sim_param.no_of_users_per_slice)
-        ##  -------------------------------------------------------
+        # #  -------------------------------------------------------
         # # method 2 get CQI matrix
         # CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
         #
@@ -308,11 +377,16 @@ class RanSimEnv(gym.Env):
         #
         # observations_arr = np.array(np.reshape(CQI_data, (1, recursive_len(CQI_data))))
         # self.state = observations_arr[0]
-        ##  -------------------------------------------------------
-        # # method 3 get CQI matrix
-        CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
-        self.state = np.array(CQI_data[0])
-        ##  -------------------------------------------------------
+        # ##  -------------------------------------------------------
+        # # # method 3 get CQI matrix
+        # CQI_data = self.SD_RAN_Controller.get_CQI_data(self.slices)
+        # # self.state = np.array(CQI_data[0])
+        # cqi_arr = np.array(CQI_data[0])
+        # self.state = np.zeros(shape=cqi_arr.shape)
+        # self.state[0] = (cqi_arr[0] / (1000*2000))
+        # self.state[1] = (cqi_arr[1] / (1000*10000))
+        # self.state[2] = (cqi_arr[2] / (1000*5000))
+        # ##  -------------------------------------------------------
 
 
         # initialize slice scores as 0 from reward method 3
@@ -320,6 +394,10 @@ class RanSimEnv(gym.Env):
         self.slice_score_arr = []
         self.user_scores = np.zeros(self.sim_param.no_of_slices*self.sim_param.no_of_users_per_slice)
         self.user_score_arr = []
+        self.reward_hist = []
+        self.cost_tp_hist = []
+        self.cost_bp_hist = []
+        self.cost_delay_hist = []
 
         return np.array(self.state)
 
@@ -337,7 +415,9 @@ class RanSimEnv(gym.Env):
         # Store Simulation Results
         # user results
         parent_dir = "results/" + sim_param.timestamp + "/user_results"
-        print_data = ""
+        print_data_tp = ""
+        print_data_delay = ""
+        print_data_ql = ""
         for i in range(len(slices)):
             tmp_slice_result = slices[i].slice_result
             user_count = len(tmp_slice_result.server_results)  # choose latest result for data
@@ -345,7 +425,7 @@ class RanSimEnv(gym.Env):
                 common_name = "/slice%d_user%d_" % (i, tmp_slice_result.server_results[k].server.user.user_id)
                 cc_temp = tmp_slice_result.server_results[k].server.counter_collection
 
-                # avg results
+                # round avg results
                 filename = parent_dir + "/average_results/data/" + common_name + "avg_data.csv"
                 df = tmp_slice_result.server_results[k].df
                 df.to_csv(filename, header=True)
@@ -355,7 +435,11 @@ class RanSimEnv(gym.Env):
                 mean_df = df.mean(axis=1)
                 mean_df.to_csv(filename, header=True)
                 # print mean tp/p_size
-                print_data = print_data + "%.2f " % (mean_df.loc['mean_throughput'] / sim_param.P_SIZE)
+                print_data_tp = print_data_tp + "%.2f " % (mean_df.loc['mean_throughput2'] / slices[i].slice_param.P_SIZE)  # packets per ms
+                # print mean delay
+                print_data_delay = print_data_delay + "%.2f " % (mean_df.loc['mean_system_time'])  # delay in ms
+                # print mean ql
+                print_data_ql = print_data_ql + "%.2f " % (mean_df.loc['mean_queue_length'])
 
                 # tp
                 filename = parent_dir + "/tp" + common_name + "tp_data.csv"
@@ -381,12 +465,17 @@ class RanSimEnv(gym.Env):
                                index=['Timestamps', 'Values'])
                 df.to_csv(filename, header=False)
                 # Find how to insert histograms
-            print_data = print_data + " | "
-        print(print_data)
+            print_data_tp = print_data_tp + " | "
+            print_data_delay = print_data_delay + " | "
+            print_data_ql = print_data_ql + " | "
+        print("tp2   " + print_data_tp)
+        print("delay " + print_data_delay)
+        print ("ql " + print_data_ql)
 
         # slice results
         parent_dir = "results/" + sim_param.timestamp + "/slice_results"
-        print_data = ""
+        print_data_tp2 = ""
+        print_data_bp = ""
         for i in range(len(slices)):
             common_name = "/slice%d_" % i
             # avg results
@@ -399,8 +488,11 @@ class RanSimEnv(gym.Env):
             mean_df = df.mean(axis=1)
             mean_df.to_csv(filename, header=True)
             # print mean tp/p_size
-            print_data = print_data + "%.2f " % (mean_df.loc['mean_throughput'] / sim_param.P_SIZE)
-        print(print_data)
+            print_data_tp2 = print_data_tp2 + "%.2f " % (mean_df.loc['mean_throughput2'] / slices[i].slice_param.P_SIZE)
+            # print mean tp/p_size
+            print_data_bp = print_data_bp + "%.2f " % (mean_df.loc['blocking_probability'])
+        print("tp2 " + print_data_tp2)
+        print("dp  " + print_data_bp)
 
         # Store Slice manager allocation dataframe
         parent_dir = "results/" + sim_param.timestamp + "/sm/data/"
@@ -445,7 +537,7 @@ class RanSimEnv(gym.Env):
             window = np.ones(int(window_size)) / float(window_size)
             return np.convolve(interval, window, 'same')
 
-        window_size = 100
+        window_size = 1
 
         fig = plt.figure()
         legend_str=[]
@@ -455,7 +547,7 @@ class RanSimEnv(gym.Env):
         #     legend_str.append('%d' % i)
         # slice scores
         for i in range(self.sim_param.no_of_slices):
-            plt.plot(moving_average(score_arr[:, i], window_size), linestyle='-')
+            plt.plot(moving_average(score_arr[:, i], window_size), marker='.')
             legend_str.append('%d' % i)
 
         plt.legend(legend_str)

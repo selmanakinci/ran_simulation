@@ -124,7 +124,7 @@ class ServiceCompletion(SimEvent):
         Then, if the queue is not empty, the next packet is taken from the queue and served,
         hence a new service completion event is created and inserted in the event chain.
         """
-        server.log.append('sc: %.2f' % self.slicesim.sim_state.now)
+        server.log.append('sc: %.3f' % self.slicesim.sim_state.now)
         completed_packet = server.complete_service()
         server.server_state.packet_completed()
         # remove packet drop event
@@ -154,7 +154,7 @@ class PacketDrop(SimEvent):
         """
         Processing procedure of a packet drop.
         """
-        server.log.append('pd: %.2f' % self.slicesim.sim_state.now)
+        server.log.append('pd: %.3f' % self.slicesim.sim_state.now)
         server.remove_oldest_packet()
 
 
@@ -182,7 +182,7 @@ class PacketArrival(SimEvent):
         If packet is added to the server, a service completion event is generated.
         Each customer is counted either as accepted or as dropped.
         """
-        server.log.append('pa: %.2f' % self.slicesim.sim_state.now)
+        server.log.append('pa: %.3f' % self.slicesim.sim_state.now)
         if server.add_packet_to_server():
             # packet is added to server and served
             ev = ServiceCompletion(self.slicesim, server.served_packet.t_finish)
@@ -232,7 +232,7 @@ class ServerActivation(SimEvent):
         Then, if the queue is not empty, the next packet is taken from the queue and served,
         hence a new service completion event is created and inserted in the event chain.
         """
-        server.log.append('sa: %.2f' % self.slicesim.sim_state.now)
+        server.log.append('sa: %.3f' % self.slicesim.sim_state.now)
         if not server.server_active:
             if server.server_busy:
                 raise RuntimeError("ERROR: inactive server cant be busy.")
@@ -287,7 +287,7 @@ class ServerDeactivation(SimEvent):
         Processing procedure of a ServerDeactivation.
 
         """
-        server.log.append('sd: %.2f' % self.slicesim.sim_state.now)
+        server.log.append('sd: %.3f' % self.slicesim.sim_state.now)
         if server.server_active:
             if not server.server_busy:
                 server.deactivate_server()

@@ -29,5 +29,8 @@ class User(object):
         self.traffic_list = []
         self.traffic_list_dict = {}
         for i in self.slice_list:
-            self.traffic_list.append(self.traffic_generator.poisson_arrivals(i))
+            if 0:#i.slice_param.SLICE_ID==0:
+                self.traffic_list.append (self.traffic_generator.periodic_arrivals(i))  # for RR
+            else:
+                self.traffic_list.append(self.traffic_generator.poisson_arrivals(i))
             self.traffic_list_dict.update({i.slice_param.SLICE_ID: self.traffic_list[-1]})

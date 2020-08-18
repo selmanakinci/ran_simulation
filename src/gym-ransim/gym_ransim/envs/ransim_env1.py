@@ -123,7 +123,7 @@ class RanSimEnv1(gym.Env):
         # method2:   single agent
         reward = 0
         for i in range(len(slices)):
-            reward += slices[i].slice_result.mean_throughput / self.sim_param.P_SIZE
+            reward += slices[i].slice_result.mean_rate / self.sim_param.P_SIZE
 
         return np.array(self.state), reward, done, {}
 

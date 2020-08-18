@@ -19,12 +19,12 @@ slice.insert_users([user])
 server = slice.server_list[0]
 server.RB_list = [0]
 # -----------------------
-P = Packet(slice, user, size=6000)
-P.t_arrival = 2
-slice.sim_state.now = 3.5
+P = Packet(slice, user, size=60)
+P.t_arrival = 8
+slice.sim_state.now = 8
 P.start_service()
 
-slice.sim_state.now = 4.5
+slice.sim_state.now = 9
 P.pause_service()
 
 slice.sim_state.now = 5

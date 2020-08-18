@@ -159,61 +159,89 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
                 df = pd.read_csv(filename, header=0, index_col=0)
                 tmp_mean_queue_length = df.loc['mean_queue_length'].to_numpy()
                 tmp_mean_system_time = df.loc['mean_system_time'].to_numpy()
-                tmp_mean_throughput = df.loc['mean_throughput'].to_numpy()
+                tmp_mean_throughput = df.loc['mean_throughput2'].to_numpy()
                 tmp_packets_total = df.loc['packets_total'].to_numpy()
                 tmp_packets_served = df.loc['packets_served'].to_numpy()
                 tmp_packets_dropped = df.loc['packets_dropped'].to_numpy()
                 tmp_blocking_probability = df.loc['blocking_probability'].to_numpy()
 
                 fig, axes = plt.subplots(4, 2, figsize=(12, 20))
-                tmp_data = tmp_mean_queue_length
-                tmp_plot = axes[0, 0]
-                tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
-                tmp_plot.plot(t_arr, [mean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
-                #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
-                tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
-                              transform=tmp_plot.transAxes)
-                tmp_data = tmp_mean_system_time
-                tmp_plot = axes[1, 0]
-                tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
-                tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
-                #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
-                tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center', transform=tmp_plot.transAxes)
-                tmp_data = tmp_mean_throughput
-                tmp_plot = axes[2, 0]
-                tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
-                tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
-                #tmp_plot.text(t_arr.min(), np.nanmean(tmp_data) * 1.001, 'mean:%.2f' % (np.nanmean(tmp_data)))
-                tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
-                              transform=tmp_plot.transAxes)
-                tmp_data = tmp_packets_total
-                tmp_plot = axes[0, 1]
-                tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
-                tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
-                #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
-                tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
-                              transform=tmp_plot.transAxes)
-                tmp_data = tmp_packets_served
-                tmp_plot = axes[1, 1]
-                tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
-                tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
-                #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
-                tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
-                              transform=tmp_plot.transAxes)
-                tmp_data = tmp_packets_dropped
-                tmp_plot = axes[2, 1]
-                tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
-                tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
-                #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
-                tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
-                              transform=tmp_plot.transAxes)
-                tmp_data = tmp_blocking_probability
-                tmp_plot = axes[3, 1]
-                tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
-                tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
-                #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
-                tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
-                              transform=tmp_plot.transAxes)
+                try:
+                    tmp_data = tmp_mean_queue_length
+                    tmp_plot = axes[0, 0]
+                    tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
+                    tmp_plot.plot(t_arr, [mean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
+                    #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
+                    tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
+                                  transform=tmp_plot.transAxes)
+                except:
+                    print ("ERROR: plot user avg")
+                    pass
+                try:
+                    tmp_data = tmp_mean_system_time
+                    tmp_plot = axes[1, 0]
+                    tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
+                    tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
+                    #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
+                    tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center', transform=tmp_plot.transAxes)
+                except:
+                    print ("ERROR: plot user avg")
+                    pass
+                try:
+                    tmp_data = tmp_mean_throughput
+                    tmp_plot = axes[2, 0]
+                    tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
+                    tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
+                    #tmp_plot.text(t_arr.min(), np.nanmean(tmp_data) * 1.001, 'mean:%.2f' % (np.nanmean(tmp_data)))
+                    tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
+                                  transform=tmp_plot.transAxes)
+                except:
+                    print ("ERROR: plot user avg")
+                    pass
+                try:
+                    tmp_data = tmp_packets_total
+                    tmp_plot = axes[0, 1]
+                    tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
+                    tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
+                    #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
+                    tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
+                                  transform=tmp_plot.transAxes)
+                except:
+                    print ("ERROR: plot user avg")
+                    pass
+                try:
+                    tmp_data = tmp_packets_served
+                    tmp_plot = axes[1, 1]
+                    tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
+                    tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
+                    #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
+                    tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
+                                  transform=tmp_plot.transAxes)
+                except:
+                    print ("ERROR: plot user avg")
+                    pass
+                try:
+                    tmp_data = tmp_packets_dropped
+                    tmp_plot = axes[2, 1]
+                    tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
+                    tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
+                    #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
+                    tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
+                                  transform=tmp_plot.transAxes)
+                except:
+                    print ("ERROR: plot user avg")
+                    pass
+                try:
+                    tmp_data = tmp_blocking_probability
+                    tmp_plot = axes[3, 1]
+                    tmp_plot.plot(t_arr, tmp_data, linestyle='-', marker='o')
+                    tmp_plot.plot(t_arr, [np.nanmean(tmp_data)] * len(tmp_data), linestyle='--', color='r')
+                    #tmp_plot.text(t_arr.min(), mean(tmp_data) * 1.001, 'mean:%.2f' % (mean(tmp_data)))
+                    tmp_plot.text(0.1, 0.9, 'mean:%.2f' % (np.nanmean(tmp_data)), ha='center', va='center',
+                                  transform=tmp_plot.transAxes)
+                except:
+                    print ("ERROR: plot user avg")
+                    pass
 
                 # without mean version
                 # axes[0,0].plot(t_arr, tmp_mean_queue_length, linestyle='-', marker='o')
@@ -227,7 +255,7 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
                 fig.suptitle('User Results')
                 axes[0,0].set_ylabel('mean_queue_length')
                 axes[1,0].set_ylabel('mean_system_time')
-                axes[2,0].set_ylabel('mean_throughput')
+                axes[2,0].set_ylabel('mean_throughput2')
                 axes[0,1].set_ylabel('packets_total')
                 axes[1,1].set_ylabel('packets_served')
                 axes[2,1].set_ylabel('packets_dropped')
@@ -251,7 +279,7 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
                 df = pd.read_csv(filename, header=0, index_col=0)
                 tmp_mean_queue_length = df.loc['mean_queue_length'].to_numpy()
                 tmp_mean_system_time = df.loc['mean_system_time'].to_numpy()
-                tmp_mean_throughput = df.loc['mean_throughput'].to_numpy()
+                tmp_mean_throughput = df.loc['mean_throughput2'].to_numpy()
                 tmp_packets_total = df.loc['packets_total'].to_numpy()
                 tmp_packets_served = df.loc['packets_served'].to_numpy()
                 tmp_packets_dropped = df.loc['packets_dropped'].to_numpy()
@@ -319,7 +347,7 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
                 fig.suptitle('Slice Results for Controller: %s  Slice Manager: %s' % (sim_param.C_ALGO, slices[j].slice_param.SM_ALGO))
                 axes[0,0].set_ylabel('mean_queue_length')
                 axes[1,0].set_ylabel('mean_system_time')
-                axes[2,0].set_ylabel('mean_throughput')
+                axes[2,0].set_ylabel('mean_throughput2')
                 axes[0,1].set_ylabel('packets_total')
                 axes[1,1].set_ylabel('packets_served')
                 axes[2,1].set_ylabel('packets_dropped')

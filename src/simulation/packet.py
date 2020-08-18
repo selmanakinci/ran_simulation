@@ -43,8 +43,6 @@ class Packet(object):
         """
         self.waiting = False
         self.served = True
-        self.server.counter_collection.count_throughput(0.)  # 0 throughput is added since before start, it was zero
-        self.server.counter_collection.count_throughput2(0.)
 
         if self.slicesim.slice_param.cts_service:
             self.t_last_start = self.slicesim.sim_state.now
@@ -56,8 +54,11 @@ class Packet(object):
 
         t_system = self.t_last_start - self.t_arrival
         self.d_wait = self.d_wait + t_system - (self.d_wait+self.d_served)
-
         if self.t_start is NAN: self.t_start = self.t_last_start
+
+        self.server.counter_collection.count_throughput (0.)  # 0 throughput is added since before start, it was zero
+        if self.t_start == self.t_last_start: self.server.counter_collection.count_throughput2(0.)  # 0 tp2 only for the first serving for the packet
+
         # calculate estimated and occupation durations
         self.user.channel.get_serving_duration2(self)
 

@@ -149,7 +149,7 @@ class SliceSimulation(object):
         self.server_results_dict = {}
         for i in self.user_list:
             tmp_server = self.server_list_dict[i.user_id]
-            self.server_results.append(tmp_server.server_result.gather_results())
+            self.server_results.append(tmp_server.server_result.gather_results)
             self.server_results_dict.update({i.user_id: self.server_results[-1]})
 
         self.slice_result.gather_results(self.server_results)
@@ -207,7 +207,7 @@ class SliceSimulation(object):
         self.server_results_dict = {}
         for i in self.user_list:
             tmp_server = self.server_list_dict[i.user_id]
-            self.server_results.append(tmp_server.server_result.gather_results())
+            self.server_results.append(tmp_server.server_result.gather_results)
             self.server_results_dict.update({i.user_id: self.server_results[-1]})
 
         self.slice_result.gather_results(self.server_results)
