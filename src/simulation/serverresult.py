@@ -33,6 +33,9 @@ class ServerResult(object):
         self.mean_cumulative_throughput = 0
         self.blocking_probability = 0
 
+        self.mean_throughput2 = 0
+        self.mean_throughput2_mov_avg = 0
+
         #self.counter_collection = self.server.counter_collection
         index = 'mean_queue_length mean_system_time mean_rate mean_throughput2 cumulative_tp tp2_mov_avg packets_dropped packets_served packets_total blocking_probability'
         self.df = pd.DataFrame(index=index.split())

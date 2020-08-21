@@ -30,7 +30,7 @@ class ChannelModalCts(object):
         t_final = self.user.sim_param.T_FINAL
         t_c = self.user.sim_param.T_C
         t_coh = self.user.sim_param.T_COH # in ms
-        buffer = 2  # for the packets in simulation final
+        buffer = 3  # for the packets in simulation final
         shadowing = np.empty((0, int(t_final) + t_coh * (buffer -1) ))
 
         seed_shadowing = (self.user.user_id * len(self.RB_pool)) + self.user.sim_param.SEED_SHADOWING

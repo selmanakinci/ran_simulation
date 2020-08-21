@@ -18,8 +18,8 @@ plot_results = True
 eval_env_list = list(DummyVecEnv([make_env('ransim-v0', 0, seed, log_dir=log_dir, env_kwargs=env_kwargs)]) for _ in range(5))
 
 # model = A2C.load("best_model", env=eval_env)
-model = A2C('MlpPolicy', eval_env_list[0], verbose=1)
-# model.learn(total_timesteps = 100)
+# model = A2C('MlpPolicy', eval_env_list[0], verbose=1)
+# model.learn(total_timesteps = 1000)
 # episode_rewards, episode_lengths = evaluate_policy(model,  eval_env_list[1],
 #                                                                n_eval_episodes=n_eval_episodes,
 #                                                                render=False,
