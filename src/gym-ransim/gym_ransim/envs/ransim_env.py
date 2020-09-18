@@ -5,10 +5,6 @@ from gym.utils import seeding
 # import sys
 # sys.path.insert(1, '/home/lkn/GitRepositories/ran_simulation/src/simulation')
 
-# from counter import TimeIndependentCounter
-# from slicesimulation import SliceSimulation
-# from trafficgenerator import TrafficGenerator
-# from sliceparam import SliceParam
 from simparam import SimParam
 # from user import User
 from controller import Controller
@@ -39,12 +35,18 @@ class RanSimEnv(gym.Env):
 
         # state space limits
         #  -------------------------------------------------------
-        # method0 tp
+        # method0 tp of users
         # np.finfo (np.float32).max
         high = np.array([2] * no_of_slices * no_of_users_per_slice)
         low = np.array([0] * no_of_slices * no_of_users_per_slice)
         self.observation_space = spaces.Box(low, high, dtype=np.float32)
         # #  -------------------------------------------------------
+        # # method0 tp of slices
+        # # np.finfo (np.float32).max
+        # high = np.array([2] * no_of_slices )
+        # low = np.array([0] * no_of_slices )
+        # self.observation_space = spaces.Box(low, high, dtype=np.float32)
+        # # #  -------------------------------------------------------
         # # method1 ql
         # max_buffer_size = sim_param.max_buffer_size
         # high = np.array([max_buffer_size] * no_of_slices * no_of_users_per_slice)
@@ -69,9 +71,9 @@ class RanSimEnv(gym.Env):
         # self.action_space = spaces.Discrete(no_of_slices ** no_of_rb)
         #  -------------------------------------  method2 single agent : no_of_rb: each digit maps rb to slice
         self.action_space = spaces.MultiDiscrete(no_of_rb * [no_of_slices])  # no of rb
-        # #  -------------------------------------  method3 PF with trimming alpha
+        #  -------------------------------------  method3 PF with trimming alpha
         #self.action_space = spaces.Box( np.array([-1]),  np.array([1]), dtype=np.float32)
-        # self.action_space = spaces.Discrete(3)
+        #self.action_space = spaces.Discrete(3)
         # #  -------------------------------------------------------
 
         # other attributes of ran_environment
@@ -81,12 +83,17 @@ class RanSimEnv(gym.Env):
         self.slice_scores = None  # slice scores for reward method 3
         self.user_scores = None
 
+        # generate seed values
+        new_seed = seeding.create_seed()
+        self.sim_param.update_seeds(new_seed)
+
         self.user_score_arr = None
         self.slice_score_arr = None
         self.reward_hist = None
         self.cost_tp_hist = None
         self.cost_bp_hist = None
         self.cost_delay_hist = None
+        self.reset_counter = 0
 
     def step(self, action):
         slices = self.slices
@@ -107,13 +114,21 @@ class RanSimEnv(gym.Env):
             # slice_results[i].append(slices[i].simulate_one_round())
 
         # get next state
-        #  -------------------------------------------------------
+        # #  -------------------------------------------------------
+        # # method0 tp slices
+        # for idx in range (len (self.slices)):
+        #     # tp_exp = float(slc.slice_param.P_SIZE / slc.slice_param.MEAN_IAT)
+        #     tp_exp = float (self.slices[idx].slice_param.RATE_REQ)
+        #     self.state[idx] = float (self.slices[idx].slice_result.mean_throughput2_mov_avg / tp_exp)
+        # #  -------------------------------------------------------
         # method0 tp
-        for slc in slices:
-            tp_exp = float(slc.slice_param.P_SIZE / slc.slice_param.MEAN_IAT)
+        for slc in self.slices:
+            # tp_exp = float(slc.slice_param.P_SIZE / slc.slice_param.MEAN_IAT)
+            tp_exp = float (slc.slice_param.RATE_REQ)
+            #self.state[idx] = float (self.slices[idx].slice_result.mean_throughput2_mov_avg / tp_exp)
             for srv in slc.server_list:
                 idx = srv.user.user_id
-                self.state[idx] = float(srv.server_result.mean_throughput2_mov_avg / tp_exp)
+                self.state[idx] = float (srv.server_result.mean_throughput2 / tp_exp)
         # #  -------------------------------------------------------
         # method1: queue_lenghts
         # for slc in slices:
@@ -268,44 +283,74 @@ class RanSimEnv(gym.Env):
         #             if np.isnan(slices[i].slice_result.mean_system_time): print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: nan" % (cost_tp, cost_delay,cost_blocked, slices[i].slice_result.mean_throughput))
         #             else: print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: %.2f" % (cost_tp, cost_delay, cost_blocked, slices[i].slice_result.mean_throughput, slices[i].slice_result.mean_system_time))
         #     return slice_scores
-        # method 4_2:   squared cost ( cumulative values as cost)
+        # # method 4_2:   squared cost ( cumulative values as cost)
+        # def get_slice_scores():
+        #     # Calculate QoE=successful_packets(QoS satisfied) / arrived_packets
+        #     slice_scores = np.zeros(self.sim_param.no_of_slices)
+        #     tp_hist_tmp = []
+        #     bp_hist_tmp = []
+        #     delay_hist_tmp = []
+        #     for i in range(len(slices)):
+        #         rate_th = slices[i].slice_param.RATE_REQ #* (self.sim_param.T_S/self.sim_param.MEAN_IAT)
+        #         delay_th = slices[i].slice_param.DELAY_REQ
+        #         cost_tp = np.square((slices[i].slice_result.mean_throughput2 - rate_th)/rate_th)  # if slices[i].slice_result.mean_throughput2 < rate_th else 0
+        #         cost_delay = np.square(slices[i].slice_result.mean_system_time/delay_th)
+        #         cost_blocked = np.square(slices[i].slice_result.blocking_probability)
+        #
+        #         # slice_scores[i] = 2 - 1 * (cost_tp + cost_blocked)
+        #         if i == 0:
+        #             slice_scores[i] = 1 - cost_blocked
+        #         if i == 1:
+        #             slice_scores[i] = 1 - cost_delay
+        #         if i == 2:
+        #             slice_scores[i] = 1 - cost_delay
+        #
+        #         tp_hist_tmp.append(np.round(cost_tp,2))
+        #         bp_hist_tmp.append(np.round(cost_blocked,2))
+        #         delay_hist_tmp.append(np.round(cost_delay,2))
+        #         # slice_scores[i] = slices[i].slice_result.mean_cumulative_throughput2 / 4000  # -1 * (cost_tp)
+        #
+        #         # if slice_scores[i] < 0:
+        #         #     print('time: %d, slice: %d ' % (self.slices[0].sim_state.now, i))
+        #         #     if np.isnan(slices[i].slice_result.mean_system_time): print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: nan" % (cost_tp, cost_delay,cost_blocked, slices[i].slice_result.mean_throughput))
+        #         #     else: print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: %.2f" % (cost_tp, cost_delay, cost_blocked, slices[i].slice_result.mean_throughput, slices[i].slice_result.mean_system_time))
+        #     self.cost_tp_hist.append(tp_hist_tmp)
+        #     self.cost_bp_hist.append(bp_hist_tmp)
+        #     self.cost_delay_hist.append (delay_hist_tmp)
+        #     return slice_scores
+
+        # method 4_3:  rms per user RR_slice, mean tp difference_mcqi slice and rms slice errors
         def get_slice_scores():
-            # Calculate QoE=successful_packets(QoS satisfied) / arrived_packets
-            slice_scores = np.zeros(self.sim_param.no_of_slices)
+            slice_scores = np.zeros (self.sim_param.no_of_slices)
             tp_hist_tmp = []
             bp_hist_tmp = []
             delay_hist_tmp = []
-            for i in range(len(slices)):
-                rate_th = slices[i].slice_param.RATE_REQ #* (self.sim_param.T_S/self.sim_param.MEAN_IAT)
+
+            for i in range (len (slices)):
+                rate_th = slices[i].slice_param.RATE_REQ  # * (self.sim_param.T_S/self.sim_param.MEAN_IAT)
                 delay_th = slices[i].slice_param.DELAY_REQ
-                cost_tp = np.square((slices[i].slice_result.mean_throughput2 - rate_th)/rate_th)  # if slices[i].slice_result.mean_throughput2 < rate_th else 0
-                cost_delay = np.square(slices[i].slice_result.mean_system_time/delay_th)
-                cost_blocked = np.square(slices[i].slice_result.blocking_probability)
 
-                # slice_scores[i] = 2 - 1 * (cost_tp + cost_blocked)
-                if i == 0:
-                    slice_scores[i] = 1 - cost_blocked
-                if i == 1:
-                    slice_scores[i] = 1 - cost_delay
-                if i == 2:
-                    slice_scores[i] = 1 - cost_delay
+                tmp_data = 0
+                for j in range(self.sim_param.no_of_users_per_slice):
+                    user_id = i * self.sim_param.no_of_users_per_slice + j
+                    tmp_result = self.slices[i].server_results[j]
 
-                tp_hist_tmp.append(np.round(cost_tp,2))
-                bp_hist_tmp.append(np.round(cost_blocked,2))
-                delay_hist_tmp.append(np.round(cost_delay,2))
-                # slice_scores[i] = slices[i].slice_result.mean_cumulative_throughput2 / 4000  # -1 * (cost_tp)
+                    if i == 0 or i == 2:
+                        tmp_data += np.square((tmp_result.mean_throughput2 - rate_th) / rate_th) #if tmp_result.mean_throughput2 < rate_th else 0
+                    elif i == 1:
+                        tmp_data += tmp_result.mean_throughput2
+                if i == 0 or i == 2:
+                    cost = np.sqrt(tmp_data / self.sim_param.no_of_users_per_slice)
+                elif i == 1:
+                    cost = -((tmp_data / self.sim_param.no_of_users_per_slice) - rate_th) / rate_th if (tmp_data / self.sim_param.no_of_users_per_slice) < rate_th else 0
+                slice_scores[i] = cost
 
-                # if slice_scores[i] < 0:
-                #     print('time: %d, slice: %d ' % (self.slices[0].sim_state.now, i))
-                #     if np.isnan(slices[i].slice_result.mean_system_time): print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: nan" % (cost_tp, cost_delay,cost_blocked, slices[i].slice_result.mean_throughput))
-                #     else: print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: %.2f" % (cost_tp, cost_delay, cost_blocked, slices[i].slice_result.mean_throughput, slices[i].slice_result.mean_system_time))
-            self.cost_tp_hist.append(tp_hist_tmp)
-            self.cost_bp_hist.append(bp_hist_tmp)
-            self.cost_delay_hist.append (delay_hist_tmp)
             return slice_scores
 
         def calculate_reward(scores_):
-            reward = np.sum(scores_) /3
+            #reward = np.sqrt (np.mean (self.slice_scores)) - np.sqrt (np.mean (np.square (scores_)))
+            reward = 1 - np.sqrt (np.mean (np.square (scores_)))
+
             # print("scores: ", slice_scores_)#,"deltas: ", score_deltas)
             return reward
 
@@ -315,6 +360,58 @@ class RanSimEnv(gym.Env):
         self.slice_score_arr.append(slice_scores_)
         self.reward_hist.append(reward)
         #  -------------------------------------------------------
+        #
+        # # method 4_4_(0_1):  0/1 per user or per slice, satisfy or not
+        # def get_slice_scores():
+        #     slice_scores = np.zeros (self.sim_param.no_of_slices)
+        #     tp_hist_tmp = []
+        #     bp_hist_tmp = []
+        #     delay_hist_tmp = []
+        #
+        #     for i in range (len (slices)):
+        #         rate_th = slices[i].slice_param.RATE_REQ  # * (self.sim_param.T_S/self.sim_param.MEAN_IAT)
+        #         delay_th = slices[i].slice_param.DELAY_REQ
+        #
+        #         tmp_data = 0
+        #         for j in range (self.sim_param.no_of_users_per_slice):
+        #             user_id = i * self.sim_param.no_of_users_per_slice + j
+        #             tmp_result = self.slices[i].server_results[j]
+        #
+        #             if i == 0 or i == 2:
+        #                 tmp_data += 0 if tmp_result.mean_throughput2_mov_avg > rate_th else -1
+        #             elif i == 1:
+        #                 tmp_data += tmp_result.mean_throughput2_mov_avg
+        #         if i == 0 or i == 2:
+        #             score = tmp_data / self.sim_param.no_of_users_per_slice
+        #         elif i == 1:
+        #             score = 0 if (tmp_data / self.sim_param.no_of_users_per_slice) > rate_th else -1
+        #
+        #         slice_scores[i] = score
+        #
+        #         # tp_hist_tmp.append (np.round (cost_tp, 2))
+        #         # bp_hist_tmp.append (np.round (cost_blocked, 2))
+        #         # delay_hist_tmp.append (np.round (cost_delay, 2))
+        #         # slice_scores[i] = slices[i].slice_result.mean_cumulative_throughput2 / 4000  # -1 * (cost_tp)
+        #
+        #         # if slice_scores[i] < 0:
+        #         #     print('time: %d, slice: %d ' % (self.slices[0].sim_state.now, i))
+        #         #     if np.isnan(slices[i].slice_result.mean_system_time): print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: nan" % (cost_tp, cost_delay,cost_blocked, slices[i].slice_result.mean_throughput))
+        #         #     else: print("cost_tp: %.2f cost_delay: %.2f cost_blocked: %.2f mean_tp: %.2f mean_delay: %.2f" % (cost_tp, cost_delay, cost_blocked, slices[i].slice_result.mean_throughput, slices[i].slice_result.mean_system_time))
+        #     # self.cost_tp_hist.append (tp_hist_tmp)
+        #     # self.cost_bp_hist.append (bp_hist_tmp)
+        #     # self.cost_delay_hist.append (delay_hist_tmp)
+        #     return slice_scores
+        # def calculate_reward(scores_):
+        #     reward = 1 if (np.sum(scores_) == 0) else -np.square(np.sum(scores_))
+        #     # print("scores: ", slice_scores_)#,"deltas: ", score_deltas)
+        #     return reward
+        #
+        # slice_scores_ = get_slice_scores()
+        # reward = calculate_reward(slice_scores_)
+        # self.slice_scores = slice_scores_
+        # self.slice_score_arr.append(slice_scores_)
+        # self.reward_hist.append(reward)
+        # #  -------------------------------------------------------
 
         return np.array(self.state), reward, done, {}
 
@@ -337,10 +434,9 @@ class RanSimEnv(gym.Env):
 
         # update seeds ( not for baselines)
         # if C_algo is 'RL':
-        new_seed = seeding.create_seed()
-        self.sim_param.update_seeds(new_seed)
+        # new_seed = seeding.create_seed()
+        # self.sim_param.update_seeds(new_seed)
 
-        # plot before reset
         for key, value in kwargs.items():
             if key == 'env_seed':
                 self.sim_param.update_seeds(value)
@@ -357,11 +453,45 @@ class RanSimEnv(gym.Env):
         # initialize SD_RAN_Controller
         self.SD_RAN_Controller = Controller(self.sim_param)
 
+        # run simulation with random allocation
+        def run_simulation_transient_phase(no_of_steps):
+            C_ALGO_original = self.sim_param.C_ALGO
+            self.sim_param.C_ALGO = 'Random'
+
+            for _ in range(no_of_steps):
+                RB_mapping = self.SD_RAN_Controller.RB_allocate_to_slices (self.slices[0].sim_state.now, self.slices)
+
+                # simulate one round
+                for i in range (len (self.slices)):
+                    self.slices[i].prep_next_round (RB_mapping[i, :, :])
+                    self.slices[i].simulate_one_round ()
+            self.sim_param.C_ALGO = C_ALGO_original
+            return
+
+        run_simulation_transient_phase(no_of_steps=2)
+
         # get initial state
         #  -------------------------------------------------------
-        # method 0 tp2
+        # method 0 tp2 of users
         self.state = np.array([0] * self.sim_param.no_of_slices * self.sim_param.no_of_users_per_slice, dtype=np.float32)
-        #  -------------------------------------------------------
+
+        # method0 tp2  (added for transient phase)
+        for slc in self.slices:
+            # tp_exp = float(slc.slice_param.P_SIZE / slc.slice_param.MEAN_IAT)
+            tp_exp = float (slc.slice_param.RATE_REQ)
+            for srv in slc.server_list:
+                idx = srv.user.user_id
+                self.state[idx] = float(srv.server_result.mean_throughput2 / tp_exp)
+        # #  -------------------------------------------------------
+        # # method 0 tp2 of slices
+        # self.state = np.array([0] * self.sim_param.no_of_slices, dtype=np.float32)
+        #
+        # # method0 tp2  (added for transient phase)
+        # for idx in range(len(self.slices)):
+        #     # tp_exp = float(slc.slice_param.P_SIZE / slc.slice_param.MEAN_IAT)
+        #     tp_exp = float (self.slices[idx].slice_param.RATE_REQ)
+        #     self.state[idx] = float (self.slices[idx].slice_result.mean_throughput2_mov_avg / tp_exp)
+        # #  -------------------------------------------------------
         # # method 1 queue_lenghts
         # self.state = np.array([0] * self.sim_param.no_of_slices * self.sim_param.no_of_users_per_slice)
         # #  -------------------------------------------------------

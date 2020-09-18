@@ -28,7 +28,7 @@ class SimParam(object):
         self.max_buffer_size = 10  # max buffer length in packets
 
         # inter-arrival-time, simulation time and local_scheduler granularity in ms
-        self.MEAN_IAT = 2    # mean inter arrival time in ms
+        #self.MEAN_IAT = 2    # mean inter arrival time in ms
         #self.MEAN_CG = 1        # mean channel gain value
         self.T_FINAL = t_final     # in ms
         self.T_C = 10        # controller period, round period
@@ -41,7 +41,7 @@ class SimParam(object):
         self.C_ALGO = 'RL'  # 'H': Hard Slicing, 'RR': round robin, 'MCQI': max cqi, 'PF': prop. fair
 
         # Prop. Fair Scheduling constant for controller
-        self.ALPHA_C = .1#.1
+        self.ALPHA_C = .1
 
         # all resource blocks
         self.RB_pool = list(range(25))
@@ -50,20 +50,23 @@ class SimParam(object):
         self.FREQ = 2*1e9  # 2GHz
         self.PL_Exponent = 3.0
         self.P_TX_dBm = 20   # in dBm
-        self.DIST_MIN = 10   # in meter
-        self.DIST_MAX = 100  # in meter
+        self.DIST_MIN = 30   # in meter
+        self.DIST_MAX = 60  # in meter
         self.SIGMA_shadowing = 6.8  # in dB
         self.TEMPERATURE = 293  # kelvin
         self.RB_BANDWIDTH = 180*1e3  # 180kHz
 
         # set seed for random number generation
         # self.SEED_CG = 0
-        self.SEED_SHADOWING = 0
-        self.SEED_IAT = 0
+        #self.SEED_SHADOWING = 0
+        #self.SEED_IAT = 0
+        self.SEED_OFFSET = 0
 
     def update_seeds(self, new_seed=0):
-        self.SEED_SHADOWING = new_seed  # 0
-        self.SEED_IAT = self.SEED_SHADOWING + (self.no_of_slices*self.no_of_users_per_slice*len(self.RB_pool))# 0
+        self.SEED_OFFSET = new_seed
+        #self.SEED_DIST = self.SEED_OFFSET
+        #self.SEED_SHADOWING = new_seed  # 0
+        #self.SEED_IAT = self.SEED_SHADOWING + (self.no_of_slices*self.no_of_users_per_slice*len(self.RB_pool))# 0
 
     '''def SimParam(self):
         """

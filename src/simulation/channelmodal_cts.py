@@ -33,7 +33,7 @@ class ChannelModalCts(object):
         buffer = 3  # for the packets in simulation final
         shadowing = np.empty((0, int(t_final) + t_coh * (buffer -1) ))
 
-        seed_shadowing = (self.user.user_id * len(self.RB_pool)) + self.user.sim_param.SEED_SHADOWING
+        seed_shadowing = (self.user.user_id * len(self.RB_pool)) + self.user.sim_param.SEED_OFFSET
         for i in range(len(self.RB_pool)):
             self.rng_shadowing = RNG(NormalRNS(0, self.user.sim_param.SIGMA_shadowing, seed_shadowing), s_type='shadowing')
 

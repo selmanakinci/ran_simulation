@@ -4,6 +4,7 @@ from matplotlib import pyplot
 from numpy import savetxt
 from itertools import cycle
 import pandas as pd
+from rng import RNG, ExponentialRNS, UniformRNS, UniformIntRNS
 
 
 class Controller(object):
@@ -19,6 +20,9 @@ class Controller(object):
         self.slices_cycle = []
         self.avg_rate_pf = []
         self.df = pd.DataFrame()
+
+        # random allocation
+        self.rng_rb_allocate = RNG(UniformIntRNS (0, sim_param.no_of_slices - 1, the_seed=sim_param.SEED_OFFSET), s_type='rb_allocation')
 
     def RB_allocate_from_action(self, t_start, slice_list, action):
         '''""" method 0: 1slice-1agent: discrete action (0, no_of_rb),
@@ -78,8 +82,8 @@ class Controller(object):
             RB_mapping[slice_idx, i, 0] = True'''
         ##  -------------------------------------------------------
         """
-            method 2: 1agent: Multi discrete action ( no_of_rb * [(0,no_of_slices)] ) 
-                        maps no_of_rb to slices 
+            method 2: 1agent: Multi discrete action ( no_of_rb * [(0,no_of_slices)] )
+                        maps no_of_rb to slices
         """
         no_of_rb = action.size
         rb_dist = action
@@ -91,7 +95,7 @@ class Controller(object):
         for i in range(no_of_rb):
             slice_idx = int(rb_dist[i])
             RB_mapping[slice_idx, i] = True
-        # # ##  -------------------------------------------------------
+        # ##  -------------------------------------------------------
         # """
         #     method 3:  PF with trimming alpha
         # """
@@ -203,6 +207,12 @@ class Controller(object):
                 for j in range(no_of_RB_per_slice):
                     rb_idx = i * no_of_RB_per_slice + j
                     RB_mapping[i][rb_idx] = True
+
+        # random allocation
+        elif self.sim_param.C_ALGO == 'Random':
+            for j in range(RB_mapping.shape[1]):  # loop over RBs
+                tmp_slice_idx = self.rng_rb_allocate.get_rb()
+                RB_mapping[tmp_slice_idx][j] = True
 
         # round robin
         elif self.sim_param.C_ALGO == 'RR':

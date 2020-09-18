@@ -27,6 +27,8 @@ class RNG(object):
             self.dist_rns = rns
         elif s_type == 'shadowing':
             self.shadowing_rns = rns
+        elif s_type == 'rb_allocation':
+            self.rb_rns = rns
     
     # def set_iat_rns(self, rns):
     #     """
@@ -67,6 +69,12 @@ class RNG(object):
         Return a new sample of the Dist RNS
         """
         return self.dist_rns.next()
+
+    def get_rb(self):
+        """
+        Return a new sample of the Dist RNS
+        """
+        return self.rb_rns.next()
 
     def get_shadowing(self, t_final):
         """
@@ -163,7 +171,31 @@ class ExponentialRNS(RNS):
         Generate the next random number using the inverse transform method.
         """
         return -math.log(self.r.random()) * self.mean
-        
+
+
+class UniformIntRNS(RNS):
+
+    """
+    Class to provide exponentially distributed random numbers. After initialization, new numbers can be generated
+    using next(). Initialization with upper and lower bound and optional seed.
+    :param a: the lower bound of the uniform distribution
+    :param b: the upper bound of the uniform distribution
+    :param the_seed: optional seed for the random number stream
+    """
+
+    def __init__(self, a, b, the_seed=None):
+        """
+        Initialize Uniform RNS and set the parameters.
+        """
+        super(UniformIntRNS, self).__init__(the_seed)
+        self.lower_bound = a
+        self.upper_bound = b
+
+    def next(self):
+        """
+        Generate the next random number using the inverse transform method.
+        """
+        return self.r.randint(self.lower_bound, self.upper_bound)
 
 class UniformRNS(RNS):
 
