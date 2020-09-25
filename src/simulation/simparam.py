@@ -10,7 +10,9 @@ class SimParam(object):
 
         # initial parameters
         self.no_of_slices = 3
-        self.no_of_users_per_slice = 10
+        #self.no_of_users_per_slice = 10
+        self.no_of_users_list = (10, 5, 10)
+        self.max_no_of_users_per_slice = 10
 
         # Functional Flags
         self.cts_service = True  # serve packets continuously or start on the next slot

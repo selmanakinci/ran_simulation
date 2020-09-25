@@ -84,7 +84,6 @@ def create_dir(sim_param):
 
     # create logfile and write SimParameters
     log_file = open(parent_dir + "/logfile.txt", "wt")
-    log_file.write('no_of_slices: %d\nno_of_users_per_slice: %d\n\n' % (sim_param.no_of_slices, sim_param.no_of_users_per_slice))
     attrs = vars(sim_param)
     log_file.write('SimParam\n' + ''.join("%s: %s\n" % item for item in attrs.items()))
     #log_file.close()

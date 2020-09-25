@@ -217,7 +217,17 @@ class Controller(object):
         # round robin
         elif self.sim_param.C_ALGO == 'RR':
             if not isinstance(self.slices_cycle, cycle):
-                self.slices_cycle = cycle(np.arange(0, RB_mapping.shape[0]))
+                # region : weighted cycle
+                #self.slices_cycle = cycle(np.arange(0, RB_mapping.shape[0]))
+                cycle_list = []
+                weight_list = list(self.sim_param.no_of_users_list)
+                while max(weight_list)>0:
+                    for i in range(len(weight_list)):
+                        if weight_list[i] > 0:
+                            cycle_list.append(i)
+                            weight_list[i]-=1
+                self.slices_cycle = cycle(cycle_list)
+                # endregion : weighted cycle
             for j in range(RB_mapping.shape[1]):  # loop over RBs
                 tmp_slice_idx = next(self.slices_cycle)
                 RB_mapping[tmp_slice_idx][j] = True

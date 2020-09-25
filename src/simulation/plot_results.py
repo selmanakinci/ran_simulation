@@ -26,7 +26,7 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
     t_sm = sim_param.T_SM
     t_final = sim_param.T_FINAL
     no_of_slices = sim_param.no_of_slices
-    no_of_users_per_slice = sim_param.no_of_users_per_slice
+    #no_of_users_per_slice = sim_param.no_of_users_per_slice
 
     # Controller
     if plot_controller:
@@ -74,15 +74,16 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
             ax.set_xticks(xticks)
             ax.set_yticks(yticks)
 
-            if no_of_users_per_slice != 1:
-                colors = [im.cmap(float(value / (no_of_users_per_slice - 1))) for value in range(
-                    no_of_users_per_slice)]  # get the colors of the values, according to the colormap used by imshow
+            no_of_users_in_slice = sim_param.no_of_users_list[i]
+            if no_of_users_in_slice != 1:
+                colors = [im.cmap(float(value / (no_of_users_in_slice - 1))) for value in range(
+                    no_of_users_in_slice)]  # get the colors of the values, according to the colormap used by imshow
                 patches = [mpatches.Patch(color=colors[k], label="User id {l}".format(l=k)) for k in
-                           range(no_of_users_per_slice)]  # create a patch (proxy artist) for every color
+                           range(no_of_users_in_slice)]  # create a patch (proxy artist) for every color
             else:
                 colors = im.cmap(0.)
                 patches = [mpatches.Patch(label="User id {l}".format(l=k)) for k in
-                           range(no_of_users_per_slice)]  # create a patch (proxy artist) for every color
+                           range(no_of_users_in_slice)]  # create a patch (proxy artist) for every color
 
             plt.legend(handles=patches, bbox_to_anchor=(1,1), loc='upper left')
             filename = path + "plot_slice_%d.png" % i
@@ -92,11 +93,12 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
     # Server(user) Results
     pseudo_server = Server(0,0,0)
     tmp_counter_collection = CounterCollection(pseudo_server)
+    user_id = 0
     if plot_user_results:
         path = parent_dir + "/user_results"
         for j in range(no_of_slices):
-            for k in range(no_of_users_per_slice):
-                user_id = j*no_of_users_per_slice + k
+            for k in range(sim_param.no_of_users_list[j]):
+                #user_id = j*no_of_users_per_slice + k
 
                 # tp
                 filename = path + "/tp" + "/slice%d_user%d_tp_data.csv" % (j, user_id)
@@ -144,6 +146,7 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
                     print("Warning: System Time for slice%d_user%d is empty. " % (j, user_id))
                 else:
                     tmp_counter_collection.cnt_syst.plot(plotname, one_round=False)
+                user_id+=1
 
 
     # use below to plot average results
@@ -152,9 +155,10 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
         path = parent_dir + "/user_results/average_results/data"
         #for i in range(int(t_final/t_c)):
         t_arr = np.arange(t_c,t_final+t_c,t_c)
+        user_id=0
         for j in range(no_of_slices):
-            for k in range(no_of_users_per_slice):
-                user_id = j * no_of_users_per_slice + k
+            for k in range(sim_param.no_of_users_list[j]):
+                #user_id = j * no_of_users_per_slice + k
                 filename = path + "/slice%d_user%d_avg_data.csv" % (j, user_id)
                 df = pd.read_csv(filename, header=0, index_col=0)
                 tmp_mean_queue_length = df.loc['mean_queue_length'].to_numpy()
@@ -265,6 +269,7 @@ def plot_results(parent_dir, sim_param=SimParam(), slices = []):
                 filename = parent_dir + "/user_results/average_results/plot_slice%d_user%d_average_values.png" % (j, user_id)
                 plt.savefig(filename)
                 plt.close(fig)
+                user_id += 1
 
 
     # plot average slice results
