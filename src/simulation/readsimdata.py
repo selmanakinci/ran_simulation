@@ -4,7 +4,10 @@ from matplotlib import pyplot
 import pandas as pd
 from matplotlib.patches import Polygon
 
+
 def read_sim_data(parent_dir, no_of_slices=3, no_of_users_list=(10,10,10)):
+
+    # slices avg over simulation run
     class SimAvgResult(object):
         def __init__(self):
             self.tp = None
@@ -85,10 +88,21 @@ def read_sim_data(parent_dir, no_of_slices=3, no_of_users_list=(10,10,10)):
             self.user_results = [UserResult()] * sum(no_of_users_list)
             self.slice_results = [SliceResult()] * no_of_slices
 
+            self.reward_arr = []
+            self.slice_scores = None
+
         def add_sm_data(self, sm_data):
             self.sm.append(sm_data)
 
     result = SimResult()
+
+    # env_dataframe
+    # reward and slice scores
+    filename = parent_dir + "/env_df.csv"
+    env_df = pd.read_csv (filename)
+    result.reward_arr = env_df['reward_hist'].values.tolist()
+    result.slice_scores = [env_df[['slice_score_%d' %(i)]].values.tolist() for i in range(no_of_slices)]
+
 
     # Controller
     path = parent_dir + "/controller/"

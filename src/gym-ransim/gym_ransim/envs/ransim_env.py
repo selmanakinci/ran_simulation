@@ -50,7 +50,7 @@ class RanSimEnv(gym.Env):
         self.cost_delay_hist = None
         self.reset_counter = 0
 
-        columns = 'reward_hist, slice_score_0, slice_score_1, slice_score_2'
+        columns = 'reward_hist slice_score_0 slice_score_1 slice_score_2'
         self.env_df = pd.DataFrame(columns=columns.split())
 
     def initialize_spaces(self, sim_param):
@@ -477,7 +477,7 @@ class RanSimEnv(gym.Env):
 
         # save data
         tmp_data = np.insert (slice_scores_, 0, reward)
-        columns = 'reward_hist, slice_score_0, slice_score_1, slice_score_2'
+        columns = 'reward_hist slice_score_0 slice_score_1 slice_score_2'
         self.env_df = self.env_df.append(pd.Series(tmp_data, index=columns.split ()), ignore_index=True)
 
         return np.array(self.state), reward, done, {}
@@ -634,6 +634,10 @@ class RanSimEnv(gym.Env):
         self.cost_bp_hist = []
         self.cost_delay_hist = []
 
+        # reset dataframe
+        columns = 'reward_hist slice_score_0 slice_score_1 slice_score_2'
+        self.env_df = pd.DataFrame(columns=columns.split())
+
         return np.array(self.state)
 
     def plot(self):
@@ -645,7 +649,7 @@ class RanSimEnv(gym.Env):
         slices = self.slices
 
         # region : Store env_df
-        filename = "results/" + sim_param.timestamp + "/env_df"
+        filename = "results/" + sim_param.timestamp + "/env_df.csv"
         self.env_df.to_csv (filename, header=True)
 
         # region : Store Simulation Results
