@@ -140,9 +140,9 @@ class RanSimEnv(gym.Env):
             # region :  method b tp2 additional demand of users multidimentional
             for slc in self.slices:
                 tmp_idx = 0
-                tp_exp = float (slc.slice_param.RATE_REQ)
+                tp_req = float (slc.slice_param.RATE_REQ)
                 for srv in slc.server_list:
-                    self.state[slc.slice_param.SLICE_ID][tmp_idx] = float((tp_exp - srv.server_result.mean_throughput2) / tp_exp)
+                    self.state[slc.slice_param.SLICE_ID][tmp_idx] = float((tp_req - srv.server_result.mean_throughput2) / tp_req)
                     tmp_idx+=1
             # endregion :  method a tp2 of users multidimentional
             # #  -------------------------------------------------------
@@ -377,34 +377,55 @@ class RanSimEnv(gym.Env):
         #     return slice_scores
         # endregion : method 4_2:   squared cost ( cumulative values as cost)
         # region : method 4_3:  rms per user RR_slice, mean tp difference_mcqi slice and rms slice errors
+        # def get_slice_scores():
+        #     slice_scores = np.zeros (self.sim_param.no_of_slices)
+        #     tp_hist_tmp = []
+        #     bp_hist_tmp = []
+        #     delay_hist_tmp = []
+        #
+        #     for i in range (len (slices)):
+        #         rate_th = slices[i].slice_param.RATE_REQ  # * (self.sim_param.T_S/self.sim_param.MEAN_IAT)
+        #         delay_th = slices[i].slice_param.DELAY_REQ
+        #
+        #         tmp_cost = 0
+        #         no_of_users_in_slice = self.sim_param.no_of_users_list[i]
+        #         for j in range(self.sim_param.no_of_users_list[i]):
+        #             tmp_result = self.slices[i].server_results[j]
+        #
+        #             if i == 0 or i == 2 or i==1:
+        #                 tmp_data = np.square((tmp_result.mean_throughput2_mov_avg - rate_th) / rate_th) if tmp_result.mean_throughput2_mov_avg < rate_th else 0
+        #                 tmp_cost += tmp_data
+        #             # elif i == 1:
+        #             #     tmp_cost += tmp_result.mean_throughput2
+        #         if i == 0 or i == 2 or i==1:
+        #             cost = np.sqrt(tmp_cost / no_of_users_in_slice)
+        #         # elif i == 1:
+        #         #     cost = -((tmp_data / no_of_users_in_slice) - rate_th) / rate_th if (tmp_data / no_of_users_in_slice) < rate_th else 0
+        #         slice_scores[i] = cost
+        #
+        #     return slice_scores
+        # endregion : method 4_3:  rms per user RR_slice, mean tp difference_mcqi slice and rms slice errors
+        # region : method 4_4:  rms per user RR_slice, SLA success ratio for all slices
         def get_slice_scores():
             slice_scores = np.zeros (self.sim_param.no_of_slices)
-            tp_hist_tmp = []
-            bp_hist_tmp = []
-            delay_hist_tmp = []
-
             for i in range (len (slices)):
                 rate_th = slices[i].slice_param.RATE_REQ  # * (self.sim_param.T_S/self.sim_param.MEAN_IAT)
                 delay_th = slices[i].slice_param.DELAY_REQ
 
-                tmp_data = 0
+                tmp_cost = 0
                 no_of_users_in_slice = self.sim_param.no_of_users_list[i]
                 for j in range(self.sim_param.no_of_users_list[i]):
                     tmp_result = self.slices[i].server_results[j]
+                    p_sla = tmp_result.packets_served_SLA_satisfied / (tmp_result.packets_served + tmp_result.packets_dropped) if (tmp_result.packets_served + tmp_result.packets_dropped)>0 else 1
 
-                    if i == 0 or i == 2:
-                        tmp_data += np.square((tmp_result.mean_throughput2 - rate_th) / rate_th) if tmp_result.mean_throughput2 < rate_th else 0
-                    elif i == 1:
-                        tmp_data += tmp_result.mean_throughput2
-                if i == 0 or i == 2:
-                    cost = np.sqrt(tmp_data / no_of_users_in_slice)
-                elif i == 1:
-                    cost = -((tmp_data / no_of_users_in_slice) - rate_th) / rate_th if (tmp_data / no_of_users_in_slice) < rate_th else 0
+                    tmp_data = np.square (1-p_sla)
+                    tmp_cost += tmp_data
+
+                cost = np.sqrt(tmp_cost / no_of_users_in_slice)
                 slice_scores[i] = cost
 
             return slice_scores
-        # endregion : method 4_3:  rms per user RR_slice, mean tp difference_mcqi slice and rms slice errors
-
+        # endregion : method 4_4:  rms per user RR_slice, SLA success ratio for all slices
         def calculate_reward(scores_):
             #reward = np.sqrt (np.mean (self.slice_scores)) - np.sqrt (np.mean (np.square (scores_)))
             reward = 1 - np.sqrt (np.mean (np.square (scores_)))
@@ -499,23 +520,47 @@ class RanSimEnv(gym.Env):
         #self.C_algo = C_algo  # enables baseline algorithms
         #self.sim_param.C_ALGO = C_algo
 
+        # # region: variable distance
+        # # update seeds ( not for baselines) during learning
+        # if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
+        #     #new_seed = seeding.create_seed()
+        #     new_seed = self.reset_counter
+        #     self.sim_param.update_seeds(new_seed)
+        #     self.reset_counter+=1
+        #     if self.reset_counter==10:
+        #         self.reset_counter = 0
+        # # endregion
+
+        # region: variable requirements
         # update seeds ( not for baselines) during learning
         if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
-            #new_seed = seeding.create_seed()
             new_seed = self.reset_counter
             self.sim_param.update_seeds(new_seed)
-            self.reset_counter+=1
 
-        # update user list ( not for baselines) during learning
-        if self.sim_param.C_ALGO is 'RL' and self.reset_counter < 3:  # reset counter increases before here
-            self.sim_param.no_of_users_list = (5, 5, 5)
-            #self.initialize_spaces (self.sim_param)
-        elif self.sim_param.C_ALGO is 'RL' and self.reset_counter < 5:
-            self.sim_param.no_of_users_list = (10, 5, 5)
-            #self.initialize_spaces (self.sim_param)
-        elif self.sim_param.C_ALGO is 'RL':
-            self.sim_param.no_of_users_list = (5, 5, 5)
-           #self.initialize_spaces (self.sim_param)
+            if self.reset_counter < 5:
+                self.sim_param.rate_requirements = (500, 500, 500)
+                self.sim_param.mean_iats = (10, 10, 10)
+            elif self.reset_counter < 10:
+                self.sim_param.rate_requirements = (1000, 1000, 1000)
+                self.sim_param.mean_iats = (5, 5, 5)
+
+            self.reset_counter+=1
+            # if self.reset_counter==10:
+            #     self.reset_counter = 0
+        # endregion
+
+
+
+        # # update user list ( not for baselines) during learning
+        # if self.sim_param.C_ALGO is 'RL' and self.reset_counter < 3:  # reset counter increases before here
+        #     self.sim_param.no_of_users_list = (5, 5, 5)
+        #     #self.initialize_spaces (self.sim_param)
+        # elif self.sim_param.C_ALGO is 'RL' and self.reset_counter < 5:
+        #     self.sim_param.no_of_users_list = (10, 5, 5)
+        #     #self.initialize_spaces (self.sim_param)
+        # elif self.sim_param.C_ALGO is 'RL':
+        #     self.sim_param.no_of_users_list = (5, 5, 5)
+        #    #self.initialize_spaces (self.sim_param)
 
         for key, value in kwargs.items():
             if key == 'env_seed':
@@ -559,9 +604,9 @@ class RanSimEnv(gym.Env):
             self.state = np.zeros_like(0, dtype=np.float32, shape=self.observation_space.shape)  # for reset
             for slc in self.slices:
                 tmp_idx = 0
-                tp_exp = float (slc.slice_param.RATE_REQ)
+                tp_req = float (slc.slice_param.RATE_REQ)
                 for srv in slc.server_list:
-                    self.state[slc.slice_param.SLICE_ID][tmp_idx] = float((tp_exp - srv.server_result.mean_throughput2) / tp_exp)
+                    self.state[slc.slice_param.SLICE_ID][tmp_idx] = float((tp_req - srv.server_result.mean_throughput2) / tp_req)
                     tmp_idx+=1
             # endregion :  method a tp2 of users multidimentional
             # ----------------------------------------------------
@@ -754,8 +799,8 @@ class RanSimEnv(gym.Env):
         # endregion : Store Simulation Results
 
         # region : plot results
-        parent_dir = "results/" + sim_param.timestamp
-        plot_results(parent_dir, sim_param, slices)
+        # parent_dir = "results/" + sim_param.timestamp
+        # plot_results(parent_dir, sim_param, slices)
         # endregion : plot results
 
         # region : rb dist printing

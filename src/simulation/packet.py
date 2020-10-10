@@ -89,7 +89,7 @@ class Packet(object):
         self.remaining_load = 0
         self.d_served = self.d_served + t_system - (self.d_wait + self.d_served)
 
-        self.SLA_satisfied = self.checkSLA(tp2, t_system)
+        self.SLA_verdict = self.checkSLA(tp2, t_system)
 
     def get_remaining_load(self):
         """
@@ -146,5 +146,5 @@ class Packet(object):
         delay_verdict = True if system_time<=delay_threshold else False
         rate_verdict = True if rate>=rate_threshold else False
 
-        return delay_verdict and rate_verdict
+        return delay_verdict and rate_verdict  # delay verdict must hold, otherwise dropped
 

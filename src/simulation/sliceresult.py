@@ -34,7 +34,7 @@ class SliceResult(object):
 
         self.total_throughput = 0
 
-        index = 'mean_queue_length mean_system_time mean_rate mean_throughput2 cumulative_tp tp2_mov_avg packets_dropped packets_served packets_total blocking_probability'
+        index = 'mean_queue_length mean_system_time mean_rate mean_throughput2 cumulative_tp tp2_mov_avg packets_dropped packets_served packets_total blocking_probability packets_served_SLA_satisfied'
         self.df = pd.DataFrame(index=index.split())
 
         self.server_results = None
@@ -92,7 +92,7 @@ class SliceResult(object):
                 self.packets_served += server_results[i].packets_served
                 self.packets_dropped += server_results[i].packets_dropped
 
-                #self.packets_served_SLA_satisfied += server_results[i].packets_served_SLA_satisfied
+                self.packets_served_SLA_satisfied += server_results[i].packets_served_SLA_satisfied
 
                 self.blocking_probability += server_results[i].blocking_probability
                 self.mean_queue_length += server_results[i].mean_queue_length
@@ -150,7 +150,7 @@ class SliceResult(object):
             time = self.sim.sim_state.now
             self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_rate, self.mean_throughput2,
                              self.mean_cumulative_throughput2, self.mean_throughput2_mov_avg, self.packets_dropped,
-                             self.packets_served, self.packets_arrived, self.blocking_probability]
+                             self.packets_served, self.packets_arrived, self.blocking_probability, self.packets_served_SLA_satisfied]
 
 
         except:

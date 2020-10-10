@@ -28,17 +28,17 @@ round_count = 10
 #                                                         plot_before_reset=plot_results,
 #                                                         env_seed=seed)
 
-eval_env = DummyVecEnv ([make_env ('ransim-v0', 0, log_dir=log_dir, env_kwargs=env_kwargs)])
-for i in range (round_count):
-    seed = i
-    episode_rewards, episode_lengths = evaluate_baseline(env=eval_env,
-                                                                    C_ALGO='Random',
-                                                                    n_eval_episodes=n_eval_episodes,
-                                                                    render=False,
-                                                                    deterministic=True,
-                                                                    return_episode_rewards=True,
-                                                                    plot_before_reset=plot_results,
-                                                                   env_seed= seed)
+# eval_env = DummyVecEnv ([make_env ('ransim-v0', 0, log_dir=log_dir, env_kwargs=env_kwargs)])
+# for i in range (round_count):
+#     seed = i
+#     episode_rewards, episode_lengths = evaluate_baseline(env=eval_env,
+#                                                                     C_ALGO='Random',
+#                                                                     n_eval_episodes=n_eval_episodes,
+#                                                                     render=False,
+#                                                                     deterministic=True,
+#                                                                     return_episode_rewards=True,
+#                                                                     plot_before_reset=plot_results,
+#                                                                    env_seed= seed)
 
 eval_env = DummyVecEnv ([make_env ('ransim-v0', 0, log_dir=log_dir, env_kwargs=env_kwargs)])
 for i in range (round_count):

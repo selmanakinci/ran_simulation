@@ -326,11 +326,15 @@ class TimeDependentCounter(Counter):
 
         timestamps_in_window = list(filter(lambda t: t > t_start, self.timestamps))
         first_idx = self.timestamps.index(timestamps_in_window[0])
-        initial_rate = self.sum_power_two[first_idx] / self.values[first_idx] if self.values[first_idx]>0 else 0
-        initial_value = (self.timestamps[first_idx] - t_start) * initial_rate
-        values_in_window = self.values[first_idx+1:] if len(self.values) > first_idx + 1 else []  # first value is calculated in initial value, index must be increased
+        # region : wrong tp calculation 04.10.2020
+        # initial_rate = self.sum_power_two[first_idx] / self.values[first_idx] if self.values[first_idx]>0 else 0
+        # initial_value = (self.timestamps[first_idx] - t_start) * initial_rate
+        # values_in_window = self.values[first_idx+1:] if len(self.values) > first_idx + 1 else []  # first value is calculated in initial value, index must be increased
+        # mean_mov_avg = float (sum(values_in_window) + initial_value) / float (self.sim.sim_state.now - t_start)
+        # endregion
 
-        mean_mov_avg = float (sum(values_in_window) + initial_value) / float (self.sim.sim_state.now - t_start)
+        values_in_window = self.values[first_idx:]
+        mean_mov_avg = float (sum (values_in_window)) / float (self.sim.sim_state.now - t_start)
         return mean_mov_avg
 
 

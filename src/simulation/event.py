@@ -126,7 +126,7 @@ class ServiceCompletion(SimEvent):
         """
         server.log.append('sc: %.3f' % self.slicesim.sim_state.now)
         completed_packet = server.complete_service()
-        server.server_state.packet_completed()
+        server.server_state.packet_completed(completed_packet.SLA_verdict)
         # remove packet drop event
         ev = PacketDrop(self.slicesim, completed_packet.t_arrival + self.slicesim.slice_param.DELAY_REQ)
         server.event_chain.remove_event(ev)

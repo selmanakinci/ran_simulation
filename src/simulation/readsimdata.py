@@ -18,6 +18,7 @@ def read_sim_data(parent_dir, no_of_slices=3, no_of_users_list=(10,10,10)):
             self.packets_served = None
             self.packets_dropped = None
             self.bp = None
+            self.packets_served_SLA = None
 
     class SliceResult(object):
         def __init__(self):
@@ -34,6 +35,7 @@ def read_sim_data(parent_dir, no_of_slices=3, no_of_users_list=(10,10,10)):
             tmp.packets_served = df.loc['packets_served'].to_numpy ()[0]
             tmp.packets_dropped = df.loc['packets_dropped'].to_numpy ()[0]
             tmp.bp = df.loc['blocking_probability'].to_numpy ()[0]
+            tmp.packets_served_SLA = df.loc['packets_served_SLA_satisfied'].to_numpy ()[0]
             self.sim_avg = tmp
 
         def get_round_avg(self, df: pd.DataFrame):
@@ -46,6 +48,7 @@ def read_sim_data(parent_dir, no_of_slices=3, no_of_users_list=(10,10,10)):
             tmp.packets_served = df.loc['packets_served'].to_numpy ()
             tmp.packets_dropped = df.loc['packets_dropped'].to_numpy ()
             tmp.bp = df.loc['blocking_probability'].to_numpy ()
+            tmp.packets_served_SLA = df.loc['packets_served_SLA_satisfied'].to_numpy ()
             self.round_avg = tmp
 
     class UserResult(object):
@@ -67,6 +70,7 @@ def read_sim_data(parent_dir, no_of_slices=3, no_of_users_list=(10,10,10)):
             tmp.packets_served = df.loc['packets_served'].to_numpy ()[0]
             tmp.packets_dropped = df.loc['packets_dropped'].to_numpy ()[0]
             tmp.bp = df.loc['blocking_probability'].to_numpy ()[0]
+            tmp.packets_served_SLA = df.loc['packets_served_SLA_satisfied'].to_numpy ()[0]
             self.sim_avg = tmp
 
         def get_round_avg(self, df: pd.DataFrame):
@@ -79,6 +83,7 @@ def read_sim_data(parent_dir, no_of_slices=3, no_of_users_list=(10,10,10)):
             tmp.packets_served = df.loc['packets_served'].to_numpy ()
             tmp.packets_dropped = df.loc['packets_dropped'].to_numpy ()
             tmp.bp = df.loc['blocking_probability'].to_numpy ()
+            tmp.packets_served_SLA = df.loc['packets_served_SLA_satisfied'].to_numpy ()
             self.round_avg = tmp
 
     class SimResult(object):

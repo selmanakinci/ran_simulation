@@ -20,7 +20,7 @@ class SliceParam(object):
         self.timestamp = sim_param.timestamp
 
         # Packet properties
-        self.P_SIZE = sim_param.P_SIZE  # in bits
+        #self.P_SIZE = sim_param.P_SIZE  # in bits
 
         # inter-arrival-time, simulation time and local_scheduler granularity in ms
         self.T_SM = sim_param.T_SM

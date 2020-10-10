@@ -24,7 +24,7 @@ class ServerResult(object):
         self.packets_accepted = 0   # no of accepted packets
         self.packets_served = 0     # no of packets completely served
         self.packets_arrived = 0    # no of arrived packets
-        #self.packets_served_SLA_satisfied = 0  # no of packets completely served with SLA satisfaction
+        self.packets_served_SLA_satisfied = 0  # no of packets completely served with SLA satisfaction
 
         #self.mean_waiting_time = 0
         self.mean_system_time = -1
@@ -37,7 +37,7 @@ class ServerResult(object):
         self.mean_throughput2_mov_avg = 0
 
         #self.counter_collection = self.server.counter_collection
-        index = 'mean_queue_length mean_system_time mean_rate mean_throughput2 cumulative_tp tp2_mov_avg packets_dropped packets_served packets_total blocking_probability'
+        index = 'mean_queue_length mean_system_time mean_rate mean_throughput2 cumulative_tp tp2_mov_avg packets_dropped packets_served packets_total blocking_probability packets_served_SLA_satisfied'
         self.df = pd.DataFrame(index=index.split())
 
         # self.cnt_tp = None
@@ -62,7 +62,7 @@ class ServerResult(object):
             self.mean_throughput2 = self.server.counter_collection.cnt_tp2.get_mean_mov_avg(window_size=t_c)
             self.mean_throughput2_mov_avg = self.server.counter_collection.cnt_tp2.get_mean_mov_avg(window_size=5*t_c)
 
-            self.mean_cumulative_throughput = self.server.counter_collection.cnt_tp2.get_mean_mov_avg(window_size=50*t_c)#self.server.counter_collection.cnt_tp2.get_mean()
+            self.mean_cumulative_throughput = self.server.counter_collection.cnt_tp2.get_mean_mov_avg(window_size=100*t_c)#self.server.counter_collection.cnt_tp2.get_mean()
 
             # self.cnt_tp = self.server.counter_collection.cnt_tp
             # self.cnt_ql = self.server.counter_collection.cnt_ql
@@ -73,12 +73,12 @@ class ServerResult(object):
             self.packets_arrived = self.server.server_state.num_packets
             self.blocking_probability = self.server.server_state.get_blocking_probability()
 
-            #self.packets_served_SLA_satisfied = self.server.server_state.num_completed_packets_SLA_satisfied
+            self.packets_served_SLA_satisfied = self.server.server_state.num_completed_packets_SLA_satisfied
 
 
             # Storing data with dataframe
             time = self.server.slicesim.sim_state.now
-            self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_rate, self.mean_throughput2, self.mean_cumulative_throughput, self.mean_throughput2_mov_avg, self.packets_dropped, self.packets_served, self.packets_arrived, self.blocking_probability]
+            self.df[time] = [self.mean_queue_length, self.mean_system_time, self.mean_rate, self.mean_throughput2, self.mean_cumulative_throughput, self.mean_throughput2_mov_avg, self.packets_dropped, self.packets_served, self.packets_arrived, self.blocking_probability, self.packets_served_SLA_satisfied]
 
         except:
             print("ERROR: Server Result.gather_results()_slice%d_user_%d is empty. " % (self.server.slicesim.slice_param.SLICE_ID, self.server.user.user_id))

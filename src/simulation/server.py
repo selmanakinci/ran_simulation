@@ -133,7 +133,7 @@ class Server(object):
         """
         Reset server status to idle after a service completion.
         """
-        #self.counter_collection.count_throughput(self.served_packet.get_throughput())  # firstly throughput is calculated
+        #self.counter_collection.count_throughput(self.served_packet.get_throughput())  # first throughput is calculated
         self.server_busy = False
         p = self.served_packet
         p.complete_service()

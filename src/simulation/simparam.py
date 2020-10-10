@@ -11,8 +11,14 @@ class SimParam(object):
         # initial parameters
         self.no_of_slices = 3
         #self.no_of_users_per_slice = 10
-        self.no_of_users_list = (10, 5, 10)
+        self.no_of_users_list = (10, 10, 10)
         self.max_no_of_users_per_slice = 10
+
+        # requirements, packet size and iat
+        self.delay_requirements = (50, 50, 50)  # ms
+        self.rate_requirements = (2000, 2000, 2000) # kbps
+        self.packet_sizes = (10000, 10000, 10000)  # in bits
+        self.mean_iats = (5, 5, 5)  # in ms
 
         # Functional Flags
         self.cts_service = True  # serve packets continuously or start on the next slot
@@ -23,9 +29,7 @@ class SimParam(object):
         now = datetime.now()
         self.timestamp = now.strftime("%Y_%m_%d_%H%M%S")
 
-        # Packet properties# Read slice results for plotting comparison
-        # path = "baseline comparison data/08-03-2020 cts_off"
-        self.P_SIZE = 6000 #1*1000*6  # 1kB in bits
+        #self.P_SIZE = 6000 #1*1000*6  # 1kB in bits
 
         self.max_buffer_size = 10  # max buffer length in packets
 
@@ -37,7 +41,6 @@ class SimParam(object):
         self.T_SM = 1
         self.T_S = 1
         self.T_COH = 5 * self.T_C  # coherent time of the channel
-
 
         # Controller Algorithm
         self.C_ALGO = 'RL'  # 'H': Hard Slicing, 'RR': round robin, 'MCQI': max cqi, 'PF': prop. fair
@@ -52,8 +55,8 @@ class SimParam(object):
         self.FREQ = 2*1e9  # 2GHz
         self.PL_Exponent = 3.0
         self.P_TX_dBm = 20   # in dBm
-        self.DIST_MIN = 30   # in meter
-        self.DIST_MAX = 60  # in meter
+        self.DIST_MIN = 10#30   # in meter
+        self.DIST_MAX = 100#60  # in meter
         self.SIGMA_shadowing = 6.8  # in dB
         self.TEMPERATURE = 293  # kelvin
         self.RB_BANDWIDTH = 180*1e3  # 180kHz

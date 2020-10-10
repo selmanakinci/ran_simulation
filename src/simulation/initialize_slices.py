@@ -8,11 +8,11 @@ def initialize_slices(sim_param, log_file):
     slices = []
 
     # SLA requirements list [RR, MCQI PF]
-    delay_thresholds = [60, 40, 60]  # ms
-    rate_thresholds = [3000, 4000, 3000]#[2000, 3200, 2000]  # kbps  float(slc.slice_param.P_SIZE / slc.slice_param.MEAN_IAT)
+    delay_thresholds = sim_param.delay_requirements# [50, 50, 50]  # ms
+    rate_thresholds = sim_param.rate_requirements# [2000, 2000, 2000]#[2000, 3200, 2000]  # kbps  float(slc.slice_param.P_SIZE / slc.slice_param.MEAN_IAT)
 
-    packet_sizes = [10000, 10000, 10000]  # [2000, 10000, 5000]  # in bits
-    mean_iats = [1, 1, 1]
+    packet_sizes = sim_param.packet_sizes# [10000, 10000, 10000]  # [2000, 10000, 5000]  # in bits
+    mean_iats = sim_param.mean_iats# [5, 5, 5]
     # dist_arr = [[10]*10,[10]*10,[10]*10]#[[10, 10, 10, 10, 10, 100, 100, 100, 100, 100],[12]*10,[10, 10, 10, 10, 10, 100, 100, 100, 100, 100]]
 
     seed_dist = sim_param.SEED_OFFSET  # users in all slices have identical distance distributions
