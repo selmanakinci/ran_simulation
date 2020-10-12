@@ -11,7 +11,7 @@ log_dir = 'logs/a2c/ransim-v0_Test_Sim_distance_adaptation'
 env_kwargs = {'t_final':1000}
 n_eval_episodes = 1
 plot_results = True
-round_count = 10
+round_count = 20
 
 # eval_env_list = list(DummyVecEnv([make_env('ransim-v0', 0, seed, log_dir=log_dir, env_kwargs=env_kwargs)]) for _ in range(5))
 #model = A2C.load("best_model", env=eval_env)
@@ -44,7 +44,7 @@ eval_env = DummyVecEnv ([make_env ('ransim-v0', 0, log_dir=log_dir, env_kwargs=e
 for i in range (round_count):
     seed = i
     episode_rewards, episode_lengths = evaluate_baseline(env=eval_env,
-                                                                    C_ALGO='MCQI',
+                                                                    C_ALGO='RR',
                                                                     n_eval_episodes=n_eval_episodes,
                                                                     render=False,
                                                                     deterministic=True,
@@ -56,7 +56,7 @@ eval_env = DummyVecEnv ([make_env ('ransim-v0', 0, log_dir=log_dir, env_kwargs=e
 for i in range (round_count):
     seed = i
     episode_rewards, episode_lengths = evaluate_baseline(env=eval_env,
-                                                                    C_ALGO='RR',
+                                                                    C_ALGO='MCQI',
                                                                     n_eval_episodes=n_eval_episodes,
                                                                     render=False,
                                                                     deterministic=True,

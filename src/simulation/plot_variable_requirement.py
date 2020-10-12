@@ -2,6 +2,7 @@ import csv
 import os
 import numpy as np
 from matplotlib import pyplot
+import matplotlib.patches as mpatches
 import pandas as pd
 from matplotlib.patches import Polygon
 from readsimdata import read_sim_data
@@ -15,7 +16,7 @@ no_of_slices=3
 no_of_users_list = (10, 10, 10)
 
 # region : Read simulation results
-parent_dir = "baseline comparison data/variable_requirement_01/rl6_psla"
+parent_dir = "baseline comparison data/variable_requirement_03/rr"
 subfolders = [ f.path for f in os.scandir(parent_dir) if f.is_dir() ]
 results_list = []
 for i in range(len(subfolders)):
@@ -90,7 +91,7 @@ pyplot.show()
 
 # region : User tp continuous boxplots
 # get tp2 data for users each round
-t_custom_avg = 1000  # in ms
+t_custom_avg = 500  # in ms
 data = []
 t_group_list = []
 s_group_list = []
@@ -138,7 +139,10 @@ for row_key, (ax,row) in boxplot.iteritems():
         if  i%no_of_slices==2:
             box.set_facecolor ('g')
 
-pyplot.legend(['RR','MCQI','PF'], title="Slice Manager")
+rr_patch = mpatches.Patch(color='b', label='RR')
+mcqi_patch = mpatches.Patch(color='r', label='MCQI')
+pf_patch = mpatches.Patch(color='g', label='PF')
+pyplot.legend(handles=[rr_patch, mcqi_patch, pf_patch], title="Slice Manager")
 pyplot.title('Boxplot user tp')
 filename = parent_dir + "/tp_boxplot_vs_time_users.png"
 pyplot.savefig(filename)
@@ -148,7 +152,7 @@ pyplot.show()
 
 # region : User SLA continuous boxplots different columns
 # get SLA data for users each round
-t_custom_avg = 1000  # in ms
+t_custom_avg = 500  # in ms
 data_0_1 = np.empty(shape=[10, 0])
 data_1_1 = np.empty(shape=[10, 0])
 data_2_1 = np.empty(shape=[10, 0])
@@ -165,7 +169,8 @@ for tmp_result in results_list:
         tmp_packets_dropped = tmp_result.user_results[k].round_avg.packets_dropped
         tmp_grouped_dropped = np.nansum(tmp_packets_dropped.reshape (-1, int (t_custom_avg / 10)),axis=1)  # t_custom_avg divided by 10ms(step duration)
 
-        tmp_grouped_SLA_ratio = tmp_grouped_served_SLA / (tmp_grouped_served + tmp_grouped_dropped)
+        # tmp_grouped_SLA_ratio = tmp_grouped_served_SLA / (tmp_grouped_served + tmp_grouped_dropped)
+        tmp_grouped_SLA_ratio = tmp_grouped_served / (tmp_grouped_served + tmp_grouped_dropped)
         if k < user_no_cumsum[0]:
             data_0.extend (tmp_grouped_SLA_ratio)
         elif k < user_no_cumsum[1]:

@@ -15,10 +15,10 @@ class SimParam(object):
         self.max_no_of_users_per_slice = 10
 
         # requirements, packet size and iat
-        self.delay_requirements = (50, 50, 50)  # ms
-        self.rate_requirements = (2000, 2000, 2000) # kbps
-        self.packet_sizes = (10000, 10000, 10000)  # in bits
-        self.mean_iats = (5, 5, 5)  # in ms
+        self.delay_requirements = (30, 30, 30)  # ms
+        self.rate_requirements = (1500, 1500, 1500) # kbps
+        self.packet_sizes = (5000, 5000, 5000)  # in bits
+        self.mean_iats = (2.5, 2.5, 2.5)  # in ms
 
         # Functional Flags
         self.cts_service = True  # serve packets continuously or start on the next slot
@@ -55,7 +55,7 @@ class SimParam(object):
         self.FREQ = 2*1e9  # 2GHz
         self.PL_Exponent = 3.0
         self.P_TX_dBm = 20   # in dBm
-        self.DIST_MIN = 10#30   # in meter
+        self.DIST_MIN = 30#30   # in meter
         self.DIST_MAX = 100#60  # in meter
         self.SIGMA_shadowing = 6.8  # in dB
         self.TEMPERATURE = 293  # kelvin

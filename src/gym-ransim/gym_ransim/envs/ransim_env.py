@@ -416,7 +416,9 @@ class RanSimEnv(gym.Env):
                 no_of_users_in_slice = self.sim_param.no_of_users_list[i]
                 for j in range(self.sim_param.no_of_users_list[i]):
                     tmp_result = self.slices[i].server_results[j]
-                    p_sla = tmp_result.packets_served_SLA_satisfied / (tmp_result.packets_served + tmp_result.packets_dropped) if (tmp_result.packets_served + tmp_result.packets_dropped)>0 else 1
+                    # p_sla = tmp_result.packets_served_SLA_satisfied / (tmp_result.packets_served + tmp_result.packets_dropped) if (tmp_result.packets_served + tmp_result.packets_dropped)>0 else 1
+                    p_sla = tmp_result.packets_served / (
+                                tmp_result.packets_served + tmp_result.packets_dropped) if (tmp_result.packets_served + tmp_result.packets_dropped) > 0 else 1
 
                     tmp_data = np.square (1-p_sla)
                     tmp_cost += tmp_data
@@ -532,35 +534,54 @@ class RanSimEnv(gym.Env):
         # # endregion
 
         # region: variable requirements
-        # update seeds ( not for baselines) during learning
-        if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
-            new_seed = self.reset_counter
-            self.sim_param.update_seeds(new_seed)
-
-            if self.reset_counter < 5:
-                self.sim_param.rate_requirements = (500, 500, 500)
-                self.sim_param.mean_iats = (10, 10, 10)
-            elif self.reset_counter < 10:
-                self.sim_param.rate_requirements = (1000, 1000, 1000)
-                self.sim_param.mean_iats = (5, 5, 5)
-
-            self.reset_counter+=1
-            # if self.reset_counter==10:
-            #     self.reset_counter = 0
+        # # update seeds ( not for baselines) during learning
+        # # if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
+        # #     new_seed = self.reset_counter
+        # if self.reset_counter % 2 == 0:        # if not RL
+        #     new_seed = self.reset_counter / 2  # if not RL
+        #     self.sim_param.update_seeds(new_seed)
+        #
+        #     if new_seed < 5:
+        #         self.sim_param.rate_requirements = (750, 750, 750)
+        #         self.sim_param.mean_iats = (5, 5, 5)
+        #     elif new_seed < 15:
+        #         # self.sim_param.rate_requirements = (1500, 750, 750)
+        #         # self.sim_param.mean_iats = (2.5, 5, 5)
+        #         self.sim_param.rate_requirements = (1000, 1000, 1000)
+        #         self.sim_param.mean_iats = (3.33, 3.33, 3.33)
+        #     elif new_seed >= 15:
+        #         self.sim_param.rate_requirements = (750, 750, 750)
+        #         self.sim_param.mean_iats = (5, 5, 5)
+        #
+        # self.reset_counter+=1
         # endregion
 
 
+        # region: variable user_list
+        # update seeds ( not for baselines) during learning
+        if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
+            new_seed = self.reset_counter
+        # if self.reset_counter % 2 == 0:        # if not RL
+        #     new_seed = self.reset_counter / 2  # if not RL
+            self.sim_param.update_seeds(new_seed)
 
-        # # update user list ( not for baselines) during learning
-        # if self.sim_param.C_ALGO is 'RL' and self.reset_counter < 3:  # reset counter increases before here
-        #     self.sim_param.no_of_users_list = (5, 5, 5)
-        #     #self.initialize_spaces (self.sim_param)
-        # elif self.sim_param.C_ALGO is 'RL' and self.reset_counter < 5:
-        #     self.sim_param.no_of_users_list = (10, 5, 5)
-        #     #self.initialize_spaces (self.sim_param)
-        # elif self.sim_param.C_ALGO is 'RL':
-        #     self.sim_param.no_of_users_list = (5, 5, 5)
-        #    #self.initialize_spaces (self.sim_param)
+            if new_seed < 5:
+                self.sim_param.no_of_users_list = (5, 10, 10)
+                self.sim_param.rate_requirements = (3500, 1500, 1500)
+                self.sim_param.mean_iats = (1.25, 2.5, 2.5)
+            elif new_seed < 15:
+                self.sim_param.no_of_users_list = (10, 10, 10)
+                # self.sim_param.rate_requirements = (1500, 750, 750)
+                # self.sim_param.mean_iats = (2.5, 5, 5)
+                self.sim_param.rate_requirements = (1500, 1500, 1500)
+                self.sim_param.mean_iats = (2.5, 2.5, 2.5)
+            elif new_seed >= 15:
+                self.sim_param.no_of_users_list = (5, 10, 10)
+                self.sim_param.rate_requirements = (3500, 1500, 1500)
+                self.sim_param.mean_iats = (1.25, 2.5, 2.5)
+
+        self.reset_counter+=1
+        # endregion
 
         for key, value in kwargs.items():
             if key == 'env_seed':
@@ -703,6 +724,7 @@ class RanSimEnv(gym.Env):
         print_data_tp = ""
         print_data_delay = ""
         print_data_ql = ""
+        print_data_sla = ""
         for i in range(len(slices)):
             tmp_slice_result = slices[i].slice_result
             user_count = len(tmp_slice_result.server_results)  # choose latest result for data
@@ -725,6 +747,10 @@ class RanSimEnv(gym.Env):
                 print_data_delay = print_data_delay + "%.2f " % (mean_df.loc['mean_system_time'])  # delay in ms
                 # print mean ql
                 print_data_ql = print_data_ql + "%.2f " % (mean_df.loc['mean_queue_length'])
+                # print SLA ratio
+                # print_data_sla = print_data_sla + "%.2f " % (mean_df.loc['packets_served_SLA_satisfied'] / (mean_df.loc['packets_served']+mean_df.loc['packets_dropped']))
+                print_data_sla = print_data_sla + "%.2f " % (mean_df.loc['packets_served'] / (
+                            mean_df.loc['packets_served'] + mean_df.loc['packets_dropped']))
 
                 # tp
                 filename = parent_dir + "/tp" + common_name + "tp_data.csv"
@@ -753,9 +779,11 @@ class RanSimEnv(gym.Env):
             print_data_tp = print_data_tp + " | "
             print_data_delay = print_data_delay + " | "
             print_data_ql = print_data_ql + " | "
+            print_data_sla = print_data_sla + " | "
         print("tp2   " + print_data_tp)
         print("delay " + print_data_delay)
         print ("ql " + print_data_ql)
+        print ("sla " + print_data_sla)
         # endregion : user results
 
         # region : slice results
@@ -848,6 +876,8 @@ class RanSimEnv(gym.Env):
         plt.savefig(filename)
         plt.close(fig)
         # endregion :  print slice scores
+
+        print("----------------------------------------------------")
 
 def render(self, mode='human', close=False):
     ...

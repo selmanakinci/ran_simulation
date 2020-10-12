@@ -15,8 +15,8 @@ no_of_slices = 3
 no_of_users_list = (10, 10, 10)
 
 # region : Read simulation results
-c_algo = 'rl_secondary'
-parent_dir = 'baseline comparison data/variable_distance_01/'+c_algo
+c_algo = 'mcqi'
+parent_dir = 'baseline comparison data/variable_distance_02_req/'+c_algo
 subfolders = [ f.path for f in os.scandir(parent_dir) if f.is_dir() ]
 results_list = []
 for tmp_dir in subfolders:
@@ -179,7 +179,9 @@ for tmp_result in results_list:
     for k in range(len(tmp_result.user_results)):
         # tmp_packet_SLA = tmp_result.user_results[k].sim_avg.packets_served_SLA* 100 # Tsim/Tc = 100
         #tmp_packet_SLA_ratio = tmp_result.user_results[k].sim_avg.packets_served_SLA/tmp_result.user_results[k].sim_avg.packets_total
-        tmp_packet_SLA_ratio = tmp_result.user_results[k].sim_avg.packets_served_SLA / (tmp_result.user_results[k].sim_avg.packets_served + tmp_result.user_results[k].sim_avg.packets_dropped )
+        #tmp_packet_SLA_ratio = tmp_result.user_results[k].sim_avg.packets_served_SLA / (tmp_result.user_results[k].sim_avg.packets_served + tmp_result.user_results[k].sim_avg.packets_dropped )
+        tmp_packet_SLA_ratio = tmp_result.user_results[k].sim_avg.packets_served / (
+                    tmp_result.user_results[k].sim_avg.packets_served + tmp_result.user_results[k].sim_avg.packets_dropped)
 
         if k<user_no_cumsum[0]:
             data_0.append (tmp_packet_SLA_ratio)
