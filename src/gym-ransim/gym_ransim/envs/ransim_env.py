@@ -377,37 +377,12 @@ class RanSimEnv(gym.Env):
         #     return slice_scores
         # endregion : method 4_2:   squared cost ( cumulative values as cost)
         # region : method 4_3:  rms per user RR_slice, mean tp difference_mcqi slice and rms slice errors
-        # def get_slice_scores():
-        #     slice_scores = np.zeros (self.sim_param.no_of_slices)
-        #     tp_hist_tmp = []
-        #     bp_hist_tmp = []
-        #     delay_hist_tmp = []
-        #
-        #     for i in range (len (slices)):
-        #         rate_th = slices[i].slice_param.RATE_REQ  # * (self.sim_param.T_S/self.sim_param.MEAN_IAT)
-        #         delay_th = slices[i].slice_param.DELAY_REQ
-        #
-        #         tmp_cost = 0
-        #         no_of_users_in_slice = self.sim_param.no_of_users_list[i]
-        #         for j in range(self.sim_param.no_of_users_list[i]):
-        #             tmp_result = self.slices[i].server_results[j]
-        #
-        #             if i == 0 or i == 2 or i==1:
-        #                 tmp_data = np.square((tmp_result.mean_throughput2_mov_avg - rate_th) / rate_th) if tmp_result.mean_throughput2_mov_avg < rate_th else 0
-        #                 tmp_cost += tmp_data
-        #             # elif i == 1:
-        #             #     tmp_cost += tmp_result.mean_throughput2
-        #         if i == 0 or i == 2 or i==1:
-        #             cost = np.sqrt(tmp_cost / no_of_users_in_slice)
-        #         # elif i == 1:
-        #         #     cost = -((tmp_data / no_of_users_in_slice) - rate_th) / rate_th if (tmp_data / no_of_users_in_slice) < rate_th else 0
-        #         slice_scores[i] = cost
-        #
-        #     return slice_scores
-        # endregion : method 4_3:  rms per user RR_slice, mean tp difference_mcqi slice and rms slice errors
-        # region : method 4_4:  rms per user RR_slice, SLA success ratio for all slices
         def get_slice_scores():
             slice_scores = np.zeros (self.sim_param.no_of_slices)
+            tp_hist_tmp = []
+            bp_hist_tmp = []
+            delay_hist_tmp = []
+
             for i in range (len (slices)):
                 rate_th = slices[i].slice_param.RATE_REQ  # * (self.sim_param.T_S/self.sim_param.MEAN_IAT)
                 delay_th = slices[i].slice_param.DELAY_REQ
@@ -416,17 +391,42 @@ class RanSimEnv(gym.Env):
                 no_of_users_in_slice = self.sim_param.no_of_users_list[i]
                 for j in range(self.sim_param.no_of_users_list[i]):
                     tmp_result = self.slices[i].server_results[j]
-                    # p_sla = tmp_result.packets_served_SLA_satisfied / (tmp_result.packets_served + tmp_result.packets_dropped) if (tmp_result.packets_served + tmp_result.packets_dropped)>0 else 1
-                    p_sla = tmp_result.packets_served / (
-                                tmp_result.packets_served + tmp_result.packets_dropped) if (tmp_result.packets_served + tmp_result.packets_dropped) > 0 else 1
 
-                    tmp_data = np.square (1-p_sla)
-                    tmp_cost += tmp_data
-
-                cost = np.sqrt(tmp_cost / no_of_users_in_slice)
+                    if i == 0 or i == 2 or i==1:
+                        tmp_data = np.square((tmp_result.mean_throughput2_mov_avg - rate_th) / rate_th) if tmp_result.mean_throughput2_mov_avg < rate_th else 0
+                        tmp_cost += tmp_data
+                    # elif i == 1:
+                    #     tmp_cost += tmp_result.mean_throughput2
+                if i == 0 or i == 2 or i==1:
+                    cost = np.sqrt(tmp_cost / no_of_users_in_slice)
+                # elif i == 1:
+                #     cost = -((tmp_data / no_of_users_in_slice) - rate_th) / rate_th if (tmp_data / no_of_users_in_slice) < rate_th else 0
                 slice_scores[i] = cost
 
             return slice_scores
+        # endregion : method 4_3:  rms per user RR_slice, mean tp difference_mcqi slice and rms slice errors
+        # region : method 4_4:  rms per user RR_slice, SLA success ratio for all slices
+        # def get_slice_scores():
+        #     slice_scores = np.zeros (self.sim_param.no_of_slices)
+        #     for i in range (len (slices)):
+        #         rate_th = slices[i].slice_param.RATE_REQ  # * (self.sim_param.T_S/self.sim_param.MEAN_IAT)
+        #         delay_th = slices[i].slice_param.DELAY_REQ
+        #
+        #         tmp_cost = 0
+        #         no_of_users_in_slice = self.sim_param.no_of_users_list[i]
+        #         for j in range(self.sim_param.no_of_users_list[i]):
+        #             tmp_result = self.slices[i].server_results[j]
+        #             # p_sla = tmp_result.packets_served_SLA_satisfied / (tmp_result.packets_served + tmp_result.packets_dropped) if (tmp_result.packets_served + tmp_result.packets_dropped)>0 else 1
+        #             p_sla = tmp_result.packets_served / (
+        #                         tmp_result.packets_served + tmp_result.packets_dropped) if (tmp_result.packets_served + tmp_result.packets_dropped) > 0 else 1
+        #
+        #             tmp_data = np.square (1-p_sla)
+        #             tmp_cost += tmp_data
+        #
+        #         cost = np.sqrt(tmp_cost / no_of_users_in_slice)
+        #         slice_scores[i] = cost
+        #
+        #     return slice_scores
         # endregion : method 4_4:  rms per user RR_slice, SLA success ratio for all slices
         def calculate_reward(scores_):
             #reward = np.sqrt (np.mean (self.slice_scores)) - np.sqrt (np.mean (np.square (scores_)))
@@ -534,30 +534,6 @@ class RanSimEnv(gym.Env):
         # # endregion
 
         # region: variable requirements
-        # # update seeds ( not for baselines) during learning
-        # # if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
-        # #     new_seed = self.reset_counter
-        # if self.reset_counter % 2 == 0:        # if not RL
-        #     new_seed = self.reset_counter / 2  # if not RL
-        #     self.sim_param.update_seeds(new_seed)
-        #
-        #     if new_seed < 5:
-        #         self.sim_param.rate_requirements = (750, 750, 750)
-        #         self.sim_param.mean_iats = (5, 5, 5)
-        #     elif new_seed < 15:
-        #         # self.sim_param.rate_requirements = (1500, 750, 750)
-        #         # self.sim_param.mean_iats = (2.5, 5, 5)
-        #         self.sim_param.rate_requirements = (1000, 1000, 1000)
-        #         self.sim_param.mean_iats = (3.33, 3.33, 3.33)
-        #     elif new_seed >= 15:
-        #         self.sim_param.rate_requirements = (750, 750, 750)
-        #         self.sim_param.mean_iats = (5, 5, 5)
-        #
-        # self.reset_counter+=1
-        # endregion
-
-
-        # region: variable user_list
         # update seeds ( not for baselines) during learning
         if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
             new_seed = self.reset_counter
@@ -566,21 +542,47 @@ class RanSimEnv(gym.Env):
             self.sim_param.update_seeds(new_seed)
 
             if new_seed < 5:
-                self.sim_param.no_of_users_list = (5, 10, 10)
-                self.sim_param.rate_requirements = (3500, 1500, 1500)
-                self.sim_param.mean_iats = (1.25, 2.5, 2.5)
+                self.sim_param.rate_requirements = (1000, 1000, 1000)
+                self.sim_param.mean_iats = (4, 4, 4)
+                # self.sim_param.rate_requirements = (750, 750, 750)
+                # self.sim_param.mean_iats = (5, 5, 5)
             elif new_seed < 15:
-                self.sim_param.no_of_users_list = (10, 10, 10)
-                # self.sim_param.rate_requirements = (1500, 750, 750)
-                # self.sim_param.mean_iats = (2.5, 5, 5)
-                self.sim_param.rate_requirements = (1500, 1500, 1500)
-                self.sim_param.mean_iats = (2.5, 2.5, 2.5)
+                self.sim_param.rate_requirements = (1500, 750, 750)
+                self.sim_param.mean_iats = (2.5, 5, 5)
+                # self.sim_param.rate_requirements = (1000, 1000, 1000)
+                # self.sim_param.mean_iats = (3.33, 3.33, 3.33)
             elif new_seed >= 15:
-                self.sim_param.no_of_users_list = (5, 10, 10)
-                self.sim_param.rate_requirements = (3500, 1500, 1500)
-                self.sim_param.mean_iats = (1.25, 2.5, 2.5)
+                self.sim_param.rate_requirements = (1000, 1000, 1000)
+                self.sim_param.mean_iats = (4, 4, 4)
 
         self.reset_counter+=1
+        # endregion
+
+
+        # region: variable user_list
+        # # update seeds ( not for baselines) during learning
+        # # if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
+        # #     new_seed = self.reset_counter
+        # if self.reset_counter % 2 == 0:        # if not RL
+        #     new_seed = self.reset_counter / 2  # if not RL
+        #     self.sim_param.update_seeds(new_seed)
+        #
+        #     if new_seed < 5:
+        #         self.sim_param.no_of_users_list = (5, 10, 10)
+        #         self.sim_param.rate_requirements = (3000, 1500, 1500)
+        #         self.sim_param.mean_iats = (1.42, 2.5, 2.5)
+        #     elif new_seed < 15:
+        #         self.sim_param.no_of_users_list = (10, 10, 10)
+        #         # self.sim_param.rate_requirements = (1500, 750, 750)
+        #         # self.sim_param.mean_iats = (2.5, 5, 5)
+        #         self.sim_param.rate_requirements = (1500, 1500, 1500)
+        #         self.sim_param.mean_iats = (2.5, 2.5, 2.5)
+        #     elif new_seed >= 15:
+        #         self.sim_param.no_of_users_list = (5, 10, 10)
+        #         self.sim_param.rate_requirements = (3000, 1500, 1500)
+        #         self.sim_param.mean_iats = (1.42, 2.5, 2.5)
+        #
+        # self.reset_counter+=1
         # endregion
 
         for key, value in kwargs.items():
@@ -595,7 +597,7 @@ class RanSimEnv(gym.Env):
                 self.plot()
 
         # in case RR update controller
-        if self.sim_param.C_ALGO is 'RR' or 'PF':
+        if self.sim_param.C_ALGO is 'RR' or 'PF' or 'MCQI':
             # initialize SD_RAN_Controller
             self.SD_RAN_Controller = Controller (self.sim_param)
 
