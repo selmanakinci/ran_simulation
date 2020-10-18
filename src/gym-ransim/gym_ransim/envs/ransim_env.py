@@ -62,7 +62,7 @@ class RanSimEnv(gym.Env):
         # set state space  -------------------------------------
         # region : method_a tp of users multidimentional
         self.observation_space = spaces.Box (0, 2, dtype=np.float32,
-                                             shape=(sim_param.no_of_slices, sim_param.max_no_of_users_per_slice))
+                                             shape=(sim_param.max_no_of_slices, sim_param.max_no_of_users_per_slice))
         # endregion : method_a tp of users multidimentional
         # region : before midterm
         # #  -------------------------------------------------------
@@ -107,7 +107,7 @@ class RanSimEnv(gym.Env):
         #  -------------------------------------
         # endregion
         #  region : method2 single agent : no_of_rb: each digit maps rb to slice
-        self.action_space = spaces.MultiDiscrete (no_of_rb * [sim_param.no_of_slices])  # no of rb
+        self.action_space = spaces.MultiDiscrete (no_of_rb * [sim_param.max_no_of_slices])  # no of rb
         # endregion
         #  region : method3 PF with trimming alpha
         #  -------------------------------------
@@ -500,7 +500,8 @@ class RanSimEnv(gym.Env):
 
         # save data
         tmp_data = np.insert (slice_scores_, 0, reward)
-        columns = 'reward_hist slice_score_0 slice_score_1 slice_score_2'
+        #columns = 'reward_hist slice_score_0 slice_score_1 slice_score_2 slice_score_3'
+        columns = 'reward_hist' + ''.join ([' slice_score_%d' % i for i in range (len(slice_scores_))])
         self.env_df = self.env_df.append(pd.Series(tmp_data, index=columns.split ()), ignore_index=True)
 
         return np.array(self.state), reward, done, {}
@@ -534,7 +535,33 @@ class RanSimEnv(gym.Env):
         # # endregion
 
         # region: variable requirements
-        # update seeds ( not for baselines) during learning
+        # # update seeds ( not for baselines) during learning
+        # # if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
+        #     # new_seed = self.reset_counter
+        # if self.reset_counter % 2 == 0:        # if not RL
+        #     new_seed = self.reset_counter / 2  # if not RL
+        #     self.sim_param.update_seeds(new_seed)
+        #
+        #     if new_seed < 2:
+        #         self.sim_param.rate_requirements = (1000, 1000, 1000)
+        #         self.sim_param.mean_iats = (4, 4, 4)
+        #         # self.sim_param.rate_requirements = (750, 750, 750)
+        #         # self.sim_param.mean_iats = (5, 5, 5)
+        #     elif new_seed < 4:
+        #         self.sim_param.rate_requirements = (1500, 1000, 1000)
+        #         self.sim_param.mean_iats = (2.5, 4, 4)
+        #         # self.sim_param.rate_requirements = (1000, 1000, 1000)
+        #         # self.sim_param.mean_iats = (3.33, 3.33, 3.33)
+        #     elif new_seed >= 6:
+        #         self.sim_param.rate_requirements = (1000, 1000, 1000)
+        #         self.sim_param.mean_iats = (4, 4, 4)
+        #
+        # self.reset_counter+=1
+        # endregion
+
+
+        # region: variable user_list
+        # # update seeds ( not for baselines) during learning
         if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
             new_seed = self.reset_counter
         # if self.reset_counter % 2 == 0:        # if not RL
@@ -542,25 +569,24 @@ class RanSimEnv(gym.Env):
             self.sim_param.update_seeds(new_seed)
 
             if new_seed < 5:
-                self.sim_param.rate_requirements = (1000, 1000, 1000)
-                self.sim_param.mean_iats = (4, 4, 4)
-                # self.sim_param.rate_requirements = (750, 750, 750)
-                # self.sim_param.mean_iats = (5, 5, 5)
+                self.sim_param.no_of_users_list = (5, 10, 10)
+                #self.sim_param.rate_requirements = (1500, 1500, 1500)
+                #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
             elif new_seed < 15:
-                self.sim_param.rate_requirements = (1500, 750, 750)
-                self.sim_param.mean_iats = (2.5, 5, 5)
-                # self.sim_param.rate_requirements = (1000, 1000, 1000)
-                # self.sim_param.mean_iats = (3.33, 3.33, 3.33)
+                self.sim_param.no_of_users_list = (10, 10, 10)
+                # self.sim_param.rate_requirements = (1500, 750, 750)
+                # self.sim_param.mean_iats = (2.5, 5, 5)
+                #self.sim_param.rate_requirements = (1500, 1500, 1500)
+                #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
             elif new_seed >= 15:
-                self.sim_param.rate_requirements = (1000, 1000, 1000)
-                self.sim_param.mean_iats = (4, 4, 4)
+                self.sim_param.no_of_users_list = (10, 5, 10)
+                #self.sim_param.rate_requirements = (1500, 1500, 1500)
+                #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
 
         self.reset_counter+=1
         # endregion
 
-
-        # region: variable user_list
-        # # update seeds ( not for baselines) during learning
+        # region: variable slice_list
         # # if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
         # #     new_seed = self.reset_counter
         # if self.reset_counter % 2 == 0:        # if not RL
@@ -568,20 +594,30 @@ class RanSimEnv(gym.Env):
         #     self.sim_param.update_seeds(new_seed)
         #
         #     if new_seed < 5:
-        #         self.sim_param.no_of_users_list = (5, 10, 10)
-        #         self.sim_param.rate_requirements = (3000, 1500, 1500)
-        #         self.sim_param.mean_iats = (1.42, 2.5, 2.5)
-        #     elif new_seed < 15:
-        #         self.sim_param.no_of_users_list = (10, 10, 10)
-        #         # self.sim_param.rate_requirements = (1500, 750, 750)
-        #         # self.sim_param.mean_iats = (2.5, 5, 5)
+        #         self.sim_param.no_of_slices = 3
+        #         self.sim_param.SM_ALGO_list = ('RR', 'MCQI', 'PF')
+        #         self.sim_param.no_of_users_list = (5, 5, 5)
+        #         self.sim_param.delay_requirements = (30, 30, 30)
         #         self.sim_param.rate_requirements = (1500, 1500, 1500)
+        #         self.sim_param.packet_sizes = (5000, 5000, 5000)
         #         self.sim_param.mean_iats = (2.5, 2.5, 2.5)
+        #     elif new_seed < 15:
+        #         self.sim_param.no_of_slices = 5
+        #         self.sim_param.SM_ALGO_list = ('RR','MCQI','PF', 'RR', 'MCQI')
+        #         self.sim_param.no_of_users_list = (5, 5, 5, 5, 5)
+        #         self.sim_param.delay_requirements = (30, 30, 30, 30, 30)
+        #         self.sim_param.rate_requirements = (1500, 1500, 1500, 1500, 1500)
+        #         self.sim_param.packet_sizes = (5000, 5000, 5000, 5000, 5000)
+        #         self.sim_param.mean_iats = (2.5, 2.5, 2.5, 2.5, 2.5)
+        #         self.initialize_spaces (self.sim_param)
         #     elif new_seed >= 15:
-        #         self.sim_param.no_of_users_list = (5, 10, 10)
-        #         self.sim_param.rate_requirements = (3000, 1500, 1500)
-        #         self.sim_param.mean_iats = (1.42, 2.5, 2.5)
-        #
+        #         self.sim_param.no_of_slices = 3
+        #         self.sim_param.SM_ALGO_list = ('RR', 'MCQI', 'PF')
+        #         self.sim_param.no_of_users_list = (5, 5, 5)
+        #         self.sim_param.delay_requirements = (30, 30, 30)
+        #         self.sim_param.rate_requirements = (1500, 1500, 1500)
+        #         self.sim_param.packet_sizes = (5000, 5000, 5000)
+        #         self.sim_param.mean_iats = (2.5, 2.5, 2.5)
         # self.reset_counter+=1
         # endregion
 

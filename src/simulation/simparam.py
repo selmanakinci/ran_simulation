@@ -13,10 +13,13 @@ class SimParam(object):
         #self.no_of_users_per_slice = 10
         self.no_of_users_list = (10, 10, 10)
         self.max_no_of_users_per_slice = 10
+        self.SM_ALGO_list = ('RR','MCQI','PF')
+        self.max_no_of_slices = 5
+
 
         # requirements, packet size and iat
         self.delay_requirements = (30, 30, 30)  # ms
-        self.rate_requirements = (1500, 1500, 1500) # kbps
+        self.rate_requirements = (1750, 1750, 1750) # kbps
         self.packet_sizes = (5000, 5000, 5000)  # in bits
         self.mean_iats = (2.5, 2.5, 2.5)  # in ms
 

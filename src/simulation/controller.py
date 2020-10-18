@@ -220,7 +220,16 @@ class Controller(object):
                 # region : weighted cycle
                 #self.slices_cycle = cycle(np.arange(0, RB_mapping.shape[0]))
                 cycle_list = []
-                weight_list = list(self.sim_param.no_of_users_list)
+                # weight : user no
+                # weight_list = list(self.sim_param.no_of_users_list)
+                # weight : user no * tp_req
+                # a0 = np.array ([s.slice_param.RATE_REQ for s in slice_list])
+                a0 = np.array (self.sim_param.rate_requirements)
+                a1 = np.divide (a0, np.gcd.reduce (a0))
+                b0 = np.array (self.sim_param.no_of_users_list)
+                b1 = np.divide (b0, np.gcd.reduce (b0))
+                weight_list = list (b1 * a1)
+
                 while max(weight_list)>0:
                     for i in range(len(weight_list)):
                         if weight_list[i] > 0:

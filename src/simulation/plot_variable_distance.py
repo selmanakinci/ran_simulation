@@ -23,6 +23,23 @@ for tmp_dir in subfolders:
     results_list.append(read_sim_data(tmp_dir, no_of_slices=3, no_of_users_list=no_of_users_list))
 # endregion
 
+# region : Plot rb distributions
+rb_dist = pd.DataFrame()
+for tmp_result in results_list:
+    rb_dist = pd.concat([rb_dist,tmp_result.controller.apply(pd.Series.value_counts)],axis=1)
+rb_dist = rb_dist/25 * 100  # (/no of rb * 100)
+
+c = np.nan_to_num(rb_dist.to_numpy())
+c1=c.reshape (3, 10, 1000)
+c2 = np.mean(c1,axis=2)
+pyplot.plot(c2[0],'r--',label="x vs y1") #CONTAINS YOUR 3RD ROW
+pyplot.plot(c2[1],'g--',label="x vs y2") #CONTAINS YOUR 4TH ROW
+pyplot.plot(c2[2],'b--',label="x vs y3") #CONTAINS YOUR 5TH ROW
+filename = parent_dir + "/rb_dist.png"
+pyplot.savefig(filename)
+pyplot.show()
+# endregion
+
 # region : Plotting tp2 of users boxplot
 fig, axes = pyplot.subplots(nrows=1, ncols=1, figsize=(50,10))
 pyplot.setp(axes, xticklabels=['RR', 'MCQI', 'PF'])    # Set the ticks and ticklabels for all axes

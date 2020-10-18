@@ -7,7 +7,7 @@ from stable_baselines3 import A2C
 import copy
 
 # parameters
-log_dir = 'logs/a2c/ransim-v0_Test_Sim_distance_adaptation'
+log_dir = 'logs/a2c/ransim-v0_Test_Sim_user_no_adaptation'
 env_kwargs = {'t_final':1000}
 n_eval_episodes = 1
 plot_results = True

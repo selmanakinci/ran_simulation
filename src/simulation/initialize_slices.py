@@ -44,10 +44,12 @@ def initialize_slices(sim_param, log_file):
         # insert users to slice
         slices[i].insert_users(tmp_users)
 
-    # Choose Slice Manager Algorithm       'PF': prop fair, 'MCQI': Max Channel Quality Index, 'RR': round-robin
-    slices[0].slice_param.SM_ALGO = 'RR'
-    slices[1].slice_param.SM_ALGO = 'MCQI'
-    slices[2].slice_param.SM_ALGO = 'PF'
+        # Choose Slice Manager Algorithm
+        slices[i].slice_param.SM_ALGO = sim_param.SM_ALGO_list[i]
+    # # Choose Slice Manager Algorithm       'PF': prop fair, 'MCQI': Max Channel Quality Index, 'RR': round-robin
+    # slices[0].slice_param.SM_ALGO = 'RR'
+    # slices[1].slice_param.SM_ALGO = 'MCQI'
+    # slices[2].slice_param.SM_ALGO = 'PF'
 
     if log_file is None:
         pass

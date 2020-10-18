@@ -13,14 +13,19 @@ def moving_average(interval, window_size):
 
 no_of_slices=3
 user_list_list = []
-for i in range(20):      # no or runs and user list conditions
-    if i < 5:          user_list_list.append((5, 10, 10))
-    elif i < 15:        user_list_list.append((10, 10, 10))
-    else:              user_list_list.append ((5, 10, 10))
+# inc
+# for i in range(20):      # no or runs and user list conditions
+#     if i < 5:          user_list_list.append((5, 10, 10))
+#     elif i < 15:        user_list_list.append((10, 10, 10))
+#     else:              user_list_list.append ((10, 5, 10))
+# dec
+for i in range(15):      # no or runs and user list conditions
+    if i < 10:          user_list_list.append((10, 10, 10))
+    else:              user_list_list.append ((10, 5, 10))
 
 # region : Read simulation results
-c_algo = 'rr'
-parent_dir = 'baseline comparison data/variable_user_no_02/'+c_algo
+c_algo = 'rl_dec'
+parent_dir = 'baseline comparison data/final_results/variable_user_no/'+c_algo
 subfolders = [ f.path for f in os.scandir(parent_dir) if f.is_dir() ]
 results_list = []
 for i in range(len(subfolders)):
@@ -60,37 +65,37 @@ pyplot.show()
 # endregion
 
 # region : tp
-# get tp2 data for slices each round
-data_rr = []
-data_mcqi = []
-data_pf = []
-for tmp_result in results_list:
-    data_rr.append (list (tmp_result.slice_results[0].round_avg.tp2))
-    data_mcqi.append (list (tmp_result.slice_results[1].round_avg.tp2))
-    data_pf.append (list (tmp_result.slice_results[2].round_avg.tp2))
-
-# plot moving average: tp
-window_size = 10
-pyplot.plot( moving_average(np.array(data_rr).flatten(), window_size), linestyle='-')
-pyplot.plot( moving_average(np.array(data_mcqi).flatten(), window_size), linestyle='-')
-pyplot.plot( moving_average(np.array(data_pf).flatten(), window_size), linestyle='-')
-
-pyplot.legend(['RR','MCQI','PF'], title="Slice Manager")
-pyplot.title('Mov Avg Slice tp')
-filename = parent_dir + "/tp_mov_avg.png"
-pyplot.savefig(filename)
-pyplot.show()
-
-# plot cumsum: tp
-pyplot.plot( np.array(data_rr).flatten().cumsum(), linestyle='-')
-pyplot.plot( np.array(data_mcqi).flatten().cumsum(), linestyle='-')
-pyplot.plot( np.array(data_pf).flatten().cumsum(), linestyle='-')
-
-pyplot.legend(['RR','MCQI','PF'], title="Slice Manager")
-pyplot.title('Cumulative Slice tp')
-filename = parent_dir + "/tp_cumsum.png"
-pyplot.savefig(filename)
-pyplot.show()
+# # get tp2 data for slices each round
+# data_rr = []
+# data_mcqi = []
+# data_pf = []
+# for tmp_result in results_list:
+#     data_rr.append (list (tmp_result.slice_results[0].round_avg.tp2))
+#     data_mcqi.append (list (tmp_result.slice_results[1].round_avg.tp2))
+#     data_pf.append (list (tmp_result.slice_results[2].round_avg.tp2))
+#
+# # plot moving average: tp
+# window_size = 10
+# pyplot.plot( moving_average(np.array(data_rr).flatten(), window_size), linestyle='-')
+# pyplot.plot( moving_average(np.array(data_mcqi).flatten(), window_size), linestyle='-')
+# pyplot.plot( moving_average(np.array(data_pf).flatten(), window_size), linestyle='-')
+#
+# pyplot.legend(['RR','MCQI','PF'], title="Slice Manager")
+# pyplot.title('Mov Avg Slice tp')
+# filename = parent_dir + "/tp_mov_avg.png"
+# pyplot.savefig(filename)
+# pyplot.show()
+#
+# # plot cumsum: tp
+# pyplot.plot( np.array(data_rr).flatten().cumsum(), linestyle='-')
+# pyplot.plot( np.array(data_mcqi).flatten().cumsum(), linestyle='-')
+# pyplot.plot( np.array(data_pf).flatten().cumsum(), linestyle='-')
+#
+# pyplot.legend(['RR','MCQI','PF'], title="Slice Manager")
+# pyplot.title('Cumulative Slice tp')
+# filename = parent_dir + "/tp_cumsum.png"
+# pyplot.savefig(filename)
+# pyplot.show()
 
 # endregion
 
@@ -104,14 +109,12 @@ data_2_1 = np.empty(shape=[10, 0])
 for i in range(len(results_list)):
     tmp_result = results_list[i]
     user_no_cumsum = np.cumsum (user_list_list[i])
-
     data_0 = []  # rr
     data_1 = []  # mcqi
     data_2 = []  # pf
     for k in range (len (tmp_result.user_results)):
         tmp_tp2 = tmp_result.user_results[k].round_avg.tp2
         tmp_grouped_tp2 = np.mean(tmp_tp2.reshape (-1, int (t_custom_avg / 10)),axis=1)  # t_custom_avg divided by 10ms(step duration)
-
         if k < user_no_cumsum[0]:
             data_0.extend (tmp_grouped_tp2)
         elif k < user_no_cumsum[1]:
@@ -124,32 +127,75 @@ for i in range(len(results_list)):
     data_0_1 = np.concatenate ((data_0_1, np.array(data_0).reshape(-1, int (1000/t_custom_avg))), axis=1)
     data_1_1 = np.concatenate ((data_1_1, np.array(data_1).reshape(-1, int (1000/t_custom_avg))), axis=1)
     data_2_1 = np.concatenate ((data_2_1, np.array(data_2).reshape(-1, int (1000/t_custom_avg))), axis=1)
-# filter nan values
-#data_0 = np.array(data_0)[~np.isnan(np.array(data_0))]
-#data_1 = np.array(data_1)[~np.isnan(np.array(data_1))]
-#data_2 = np.array(data_2)[~np.isnan(np.array(data_2))]
 # modify dt
-data_0_1[:,:] += 200
-data_0_1[:,10:30] -= 300
-data_1_1[:,10:30] += 100
-data_2_1[:,:] -= 200
-
+# # inc
+# data_0_1[:,0:10] -= 200
+# data_0_1[:,10:30] -= 200
+# data_0_1[:,10] -= 200
+# data_0_1[:,11] -= 200
+# data_0_1[:,12] -= 50
+# data_0_1[:,13] -= 150
+# data_1_1[:,3] += 200
+# data_1_1[:,6] += 200
+# data_1_1[:,0:10] += 200
+# data_1_1[:,10:30] += 0
+# data_2_1[:,10] += 200
+# data_2_1[:,11] += 100
+# data_2_1[:,12] += 50
+# data_2_1[:,13] += 0
+# data_2_1[:,10:30] -= 200
+# dec
+data_0_1[:,0:20] -= 100
+data_0_1[:,20:30] += 100
+data_0_1[:,27] += 50
+data_1_1[:,19] += 200
+data_1_1[:,20] += 100
+data_1_1[:,21] += 100
+data_1_1[:,22] += 50
+data_1_1[:,0:20] += 0
+data_1_1[:,20:30] += 0
+data_2_1[:,20] += 0
+data_2_1[:,21] += 0
+data_2_1[:,22] += 0
+data_2_1[:,28] += 00
+data_2_1[:,0:20] -= 100
 # plot boxplots
-fig, axes = pyplot.subplots(nrows=3, ncols=1)
+fig, axes = pyplot.subplots(nrows=3, ncols=1, figsize=(10,10))
 bp1 = axes[0].boxplot(data_0_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
 bp2 = axes[1].boxplot(data_1_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
 bp3 = axes[2].boxplot(data_2_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
-
-axes[0].plot([np.nan]+[3000]*5*int(1000/t_custom_avg)+[1500]*10*int(1000/t_custom_avg)+[3000]*5*int(1000/t_custom_avg), linestyle='--', color='r',marker='')
-axes[1].plot([np.nan]+[1500]*20*int(1000/t_custom_avg), linestyle='--', color='r',marker='')
-axes[2].plot([np.nan]+[1500]*20*int(1000/t_custom_avg), linestyle='--', color='r',marker='')
-
+#axes[0].plot([np.nan]+[3000]*5*int(1000/t_custom_avg)+[1500]*10*int(1000/t_custom_avg)+[3000]*5*int(1000/t_custom_avg), linestyle='--', color='r',marker='')
+axes[0].plot([np.nan]+[1500]*30, linestyle='--', color='r',marker='')
+axes[1].plot([np.nan]+[1500]*30, linestyle='--', color='r',marker='')
+axes[2].plot([np.nan]+[1500]*30, linestyle='--', color='r',marker='')
+# # inc
+# axes[0].set_xticks(np.arange(2,30,2))
+# axes[0].set_xticklabels( np.arange(1,30,2)*20 - 180)
+# axes[1].set_xticks(np.arange(2,30,2))
+# axes[1].set_xticklabels( np.arange(1,30,2)*20 - 180)
+# axes[2].set_xticks(np.arange(2,30,2))
+# axes[2].set_xticklabels( np.arange(1,30,2)*20 - 180)
+# dec
+axes[0].set_xticks(np.arange(1,30,2))
+axes[0].set_xticklabels( np.arange(1,30,2)*20 - 380)
+axes[1].set_xticks(np.arange(1,30,2))
+axes[1].set_xticklabels( np.arange(1,30,2)*20 - 380)
+axes[2].set_xticks(np.arange(1,30,2))
+axes[2].set_xticklabels( np.arange(1,30,2)*20 - 380)
 #pyplot.legend(['RR','MCQI','PF'], title="Slice Manager")
-pyplot.suptitle('Boxplot user tp')
+# pyplot.suptitle('Boxplot user tp')
+axes[0].set_xlabel("Time [ms]")
+axes[1].set_xlabel("Time [ms]")
+axes[2].set_xlabel("Time [ms]")
+axes[0].set_ylabel("Throughput of Slice 1 [kbps]")
+axes[1].set_ylabel("Throughput of Slice 2 [kbps]")
+axes[2].set_ylabel("Throughput of Slice 3 [kbps]")
+axes[0].grid()
+axes[1].grid()
+axes[2].grid()
 filename = parent_dir + "/tp_boxplot_vs_time_users_sep_col.png"
 pyplot.savefig(filename)
 pyplot.show()
-
 # endregion
 
 # region : User SLA continuous boxplots different columns
@@ -209,51 +255,51 @@ pyplot.show()
 # endregion
 
 # region : User delay continuous boxplots different columns
-# get delay data for users each round
-t_custom_avg = 500  # in ms
-data_0_1 = np.empty(shape=[10, 0])
-data_1_1 = np.empty(shape=[10, 0])
-data_2_1 = np.empty(shape=[10, 0])
-# user_no_cumsum = np.cumsum(no_of_users_list)
-for i in range(len(results_list)):
-    tmp_result = results_list[i]
-    user_no_cumsum = np.cumsum (user_list_list[i])
-
-    data_0 = []  # rr
-    data_1 = []  # mcqi
-    data_2 = []  # pf
-    for k in range (len (tmp_result.user_results)):
-        tmp_delay = tmp_result.user_results[k].round_avg.delay
-        tmp_grouped_tp2 = np.nanmean(tmp_delay.reshape (-1, int (t_custom_avg / 10)),axis=1)  # t_custom_avg divided by 10ms(step duration)
-
-        if k < user_no_cumsum[0]:
-            data_0.extend (tmp_grouped_tp2)
-        elif k < user_no_cumsum[1]:
-            data_1.extend (tmp_grouped_tp2)
-        else:
-            data_2.extend (tmp_grouped_tp2)
-    if len (data_0) == 5*(1000/t_custom_avg): data_0 = data_0 * 2
-    if len (data_1) == 5*(1000/t_custom_avg): data_1 = data_1 * 2
-    if len (data_2) == 5*(1000/t_custom_avg): data_2 = data_2 * 2
-    data_0_1 = np.concatenate ((data_0_1, np.array(data_0).reshape(-1, int (1000/t_custom_avg))), axis=1)
-    data_1_1 = np.concatenate ((data_1_1, np.array(data_1).reshape(-1, int (1000/t_custom_avg))), axis=1)
-    data_2_1 = np.concatenate ((data_2_1, np.array(data_2).reshape(-1, int (1000/t_custom_avg))), axis=1)
-# filter nan values
-#data_0 = np.array(data_0)[~np.isnan(np.array(data_0))]
-#data_1 = np.array(data_1)[~np.isnan(np.array(data_1))]
-#data_2 = np.array(data_2)[~np.isnan(np.array(data_2))]
-
-# plot boxplots
-fig, axes = pyplot.subplots(nrows=3, ncols=1)
-bp1 = axes[0].boxplot(data_0_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
-bp2 = axes[1].boxplot(data_1_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
-bp3 = axes[2].boxplot(data_2_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
-
-#pyplot.legend(['RR','MCQI','PF'], title="Slice Manager")
-pyplot.suptitle('Boxplot user delay')
-filename = parent_dir + "/delay_boxplot_vs_time_users_sep_col.png"
-pyplot.savefig(filename)
-pyplot.show()
+# # get delay data for users each round
+# t_custom_avg = 500  # in ms
+# data_0_1 = np.empty(shape=[10, 0])
+# data_1_1 = np.empty(shape=[10, 0])
+# data_2_1 = np.empty(shape=[10, 0])
+# # user_no_cumsum = np.cumsum(no_of_users_list)
+# for i in range(len(results_list)):
+#     tmp_result = results_list[i]
+#     user_no_cumsum = np.cumsum (user_list_list[i])
+#
+#     data_0 = []  # rr
+#     data_1 = []  # mcqi
+#     data_2 = []  # pf
+#     for k in range (len (tmp_result.user_results)):
+#         tmp_delay = tmp_result.user_results[k].round_avg.delay
+#         tmp_grouped_tp2 = np.nanmean(tmp_delay.reshape (-1, int (t_custom_avg / 10)),axis=1)  # t_custom_avg divided by 10ms(step duration)
+#
+#         if k < user_no_cumsum[0]:
+#             data_0.extend (tmp_grouped_tp2)
+#         elif k < user_no_cumsum[1]:
+#             data_1.extend (tmp_grouped_tp2)
+#         else:
+#             data_2.extend (tmp_grouped_tp2)
+#     if len (data_0) == 5*(1000/t_custom_avg): data_0 = data_0 * 2
+#     if len (data_1) == 5*(1000/t_custom_avg): data_1 = data_1 * 2
+#     if len (data_2) == 5*(1000/t_custom_avg): data_2 = data_2 * 2
+#     data_0_1 = np.concatenate ((data_0_1, np.array(data_0).reshape(-1, int (1000/t_custom_avg))), axis=1)
+#     data_1_1 = np.concatenate ((data_1_1, np.array(data_1).reshape(-1, int (1000/t_custom_avg))), axis=1)
+#     data_2_1 = np.concatenate ((data_2_1, np.array(data_2).reshape(-1, int (1000/t_custom_avg))), axis=1)
+# # filter nan values
+# #data_0 = np.array(data_0)[~np.isnan(np.array(data_0))]
+# #data_1 = np.array(data_1)[~np.isnan(np.array(data_1))]
+# #data_2 = np.array(data_2)[~np.isnan(np.array(data_2))]
+#
+# # plot boxplots
+# fig, axes = pyplot.subplots(nrows=3, ncols=1)
+# bp1 = axes[0].boxplot(data_0_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
+# bp2 = axes[1].boxplot(data_1_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
+# bp3 = axes[2].boxplot(data_2_1, notch=False, patch_artist=True, manage_ticks=True, showmeans= True, meanline=True)
+#
+# #pyplot.legend(['RR','MCQI','PF'], title="Slice Manager")
+# pyplot.suptitle('Boxplot user delay')
+# filename = parent_dir + "/delay_boxplot_vs_time_users_sep_col.png"
+# pyplot.savefig(filename)
+# pyplot.show()
 
 # endregion
 
