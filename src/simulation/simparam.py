@@ -14,7 +14,7 @@ class SimParam(object):
         self.no_of_users_list = (10, 10, 10)
         self.max_no_of_users_per_slice = 10
         self.SM_ALGO_list = ('RR','MCQI','PF')
-        self.max_no_of_slices = 5
+        self.max_no_of_slices = 3
 
 
         # requirements, packet size and iat

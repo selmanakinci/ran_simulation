@@ -55,7 +55,7 @@ for c_algo in ['rr','mcqi','pf','rl']:
         data = [np.array ([360, 720, 880, 1200, 1900, 2176, 2125, 2200]), np.array ([1350, 1600, 2016, 2125, 2215]),
                 np.array ([640, 1380, 1500, 2100, 2125, 2170])]  # mcqi
     elif c_algo == 'pf':
-        data = [np.array ([1822, 1990, 1955, 2200]), np.array ([1357, 1800, 1840, 2215]),
+        data = [np.array ([1822, 1990, 1955, 2200]), np.array ([751, 1260, 1740, 2215]),
                 np.array ([1826, 1990, 2004, 2170])]  # pf
     elif c_algo == 'rl':
         data = [np.array ([1610, 1746, 1985, 2050]), np.array ([1225, 1450, 1800, 2215]),
@@ -85,6 +85,65 @@ for c_algo in ['rr','mcqi','pf','rl']:
     pyplot.savefig(filename)
     pyplot.close(fig)
     pyplot.show()
+# endregion
+
+# region : packet_served_SLA/packet_arrived  avg boxplot
+fig, axes = pyplot.subplots (nrows=1, ncols=1, figsize=(17, 12))
+pyplot.setp (axes, xticklabels=['RR', 'MCQI', 'PF', 'RL'] * 3)  # Set the ticks and ticklabels for all axes
+
+positions = [0, 0.5, 1, 1.5, 3, 3.5, 4, 4.5, 6, 6.5, 7, 7.5]
+for tick in axes.xaxis.get_major_ticks ():
+    tick.label.set_fontsize (14)
+for tick in axes.yaxis.get_major_ticks ():
+    tick.label.set_fontsize (14)
+
+
+# if c_algo == 'rr':
+data_rr = [np.array ([1795, 1976, 1995, 2200]), np.array ([705, 1250, 1700, 2215]),
+                np.array ([1765, 1850, 2005, 2170])] # rr
+# elif c_algo == 'mcqi':
+data_mcqi = [np.array ([360, 720, 880, 1200, 1900, 2176, 2125, 2200]), np.array ([1350, 1600, 2016, 2125, 2215]),
+                np.array ([640, 1380, 1500, 2100, 2125, 2170])] # mcqi
+# elif c_algo == 'rl':
+data_rl = [np.array ([1610, 1746, 1985, 2050]), np.array ([1225, 1450, 1800, 2215]),
+                np.array ([1665, 1750, 1955, 2084])]  # rl
+# elif c_algo == 'pf':
+data_pf = [np.array ([1822, 1990, 1955, 2200]), np.array ([751, 1260, 1740, 2215]),
+                np.array ([1826, 1990, 2004, 2170])]  # pf
+data = [data_rr[0], data_mcqi[0], data_pf[0], data_rl[0], data_rr[1], data_mcqi[1], data_pf[1], data_rl[1], data_rr[2],
+        data_mcqi[2], data_pf[2], data_rl[2]]
+colors = ['forestgreen', 'firebrick', 'gold', 'royalblue'] * 3
+# boxplot
+bp1 = axes.boxplot (data, notch=False, widths=0.25, patch_artist=True, manage_ticks=True, showmeans=True, meanline=True,
+                    positions=positions)
+axes.plot([1500]*9, linestyle='--', color='r')
+for patch, color in zip (bp1['boxes'], colors):
+    patch.set_facecolor (color)
+for line in bp1['means']:
+    # get position data for median line
+    x, y = line.get_xydata ()[1]  # top of median line
+    # overlay median value
+    #pyplot.text (x + 0.15, y, '%.2f' % y,
+    #             horizontalalignment='center', fontsize=14)  # draw above, centered
+# for line in bp1['whiskers']:
+#     # get position data for median line
+#     x, y = line.get_xydata()[1] # top of median line
+#     # overlay median value
+#     pyplot.text(x+0.2, y, '%.2f' % y,
+#          horizontalalignment='center', fontsize=14) # draw above, centered
+rr_patch = mpatches.Patch (color='forestgreen', label='RR')
+mcqi_patch = mpatches.Patch (color='firebrick', label='MCQI')
+pf_patch = mpatches.Patch (color='gold', label='PF')
+a2c_patch = mpatches.Patch (color='royalblue', label='A2C')
+axes.legend (handles=[rr_patch, mcqi_patch, pf_patch, a2c_patch], title="Controller Algorithm", fontsize=15,
+             title_fontsize=15)
+# fig.suptitle('Packet Success Ratio Comparison', fontsize=18)
+axes.set_xlabel ('Controller Algorithm', fontsize=18)
+axes.set_ylabel ('Throughput [kbps]', fontsize=18)
+filename = parent_dir + "/tp_boxplot.png"
+# pyplot.grid ()
+pyplot.savefig (filename)
+pyplot.show ()
 # endregion
 
 # region : Plotting delay of users boxplot
@@ -152,8 +211,8 @@ for line in bp1['means']:
     # get position data for median line
     x, y = line.get_xydata ()[1]  # top of median line
     # overlay median value
-    pyplot.text (x + 0.15, y, '%.2f' % y,
-                 horizontalalignment='center', fontsize=14)  # draw above, centered
+    # pyplot.text (x + 0.15, y, '%.2f' % y,
+    #              horizontalalignment='center', fontsize=14)  # draw above, centered
 # for line in bp1['whiskers']:
 #     # get position data for median line
 #     x, y = line.get_xydata()[1] # top of median line
@@ -168,9 +227,9 @@ axes.legend (handles=[rr_patch, mcqi_patch, pf_patch, a2c_patch], title="Control
              title_fontsize=15)
 # fig.suptitle('Packet Success Ratio Comparison', fontsize=18)
 axes.set_xlabel ('Controller Algorithm', fontsize=18)
-axes.set_ylabel ('Packet Success Ratio', fontsize=18)
+axes.set_ylabel ('Packet Reception Ratio', fontsize=18)
 filename = parent_dir + "/packets_SLA_ratio_boxplot.png"
-pyplot.grid ()
+#pyplot.grid ()
 pyplot.savefig (filename)
 pyplot.show ()
 # endregion

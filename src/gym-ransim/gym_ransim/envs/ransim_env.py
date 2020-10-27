@@ -523,16 +523,16 @@ class RanSimEnv(gym.Env):
         #self.C_algo = C_algo  # enables baseline algorithms
         #self.sim_param.C_ALGO = C_algo
 
-        # # region: variable distance
-        # # update seeds ( not for baselines) during learning
-        # if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
-        #     #new_seed = seeding.create_seed()
-        #     new_seed = self.reset_counter
-        #     self.sim_param.update_seeds(new_seed)
-        #     self.reset_counter+=1
-        #     if self.reset_counter==10:
-        #         self.reset_counter = 0
-        # # endregion
+        # region: variable distance
+        # update seeds ( not for baselines) during learning
+        if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
+            #new_seed = seeding.create_seed()
+            new_seed = self.reset_counter
+            self.sim_param.update_seeds(new_seed)
+            self.reset_counter+=1
+            if self.reset_counter==10:
+                self.reset_counter = 0
+        # endregion
 
         # region: variable requirements
         # # update seeds ( not for baselines) during learning
@@ -561,29 +561,29 @@ class RanSimEnv(gym.Env):
 
 
         # region: variable user_list
-        # # update seeds ( not for baselines) during learning
-        if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
-            new_seed = self.reset_counter
-        # if self.reset_counter % 2 == 0:        # if not RL
-        #     new_seed = self.reset_counter / 2  # if not RL
-            self.sim_param.update_seeds(new_seed)
-
-            if new_seed < 5:
-                self.sim_param.no_of_users_list = (5, 10, 10)
-                #self.sim_param.rate_requirements = (1500, 1500, 1500)
-                #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
-            elif new_seed < 15:
-                self.sim_param.no_of_users_list = (10, 10, 10)
-                # self.sim_param.rate_requirements = (1500, 750, 750)
-                # self.sim_param.mean_iats = (2.5, 5, 5)
-                #self.sim_param.rate_requirements = (1500, 1500, 1500)
-                #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
-            elif new_seed >= 15:
-                self.sim_param.no_of_users_list = (10, 5, 10)
-                #self.sim_param.rate_requirements = (1500, 1500, 1500)
-                #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
-
-        self.reset_counter+=1
+        # # # update seeds ( not for baselines) during learning
+        # if self.sim_param.C_ALGO is 'RL' and self.reset_counter % 1 == 0:
+        #     new_seed = self.reset_counter
+        # # if self.reset_counter % 2 == 0:        # if not RL
+        # #     new_seed = self.reset_counter / 2  # if not RL
+        #     self.sim_param.update_seeds(new_seed)
+        #
+        #     if new_seed < 5:
+        #         self.sim_param.no_of_users_list = (5, 10, 10)
+        #         #self.sim_param.rate_requirements = (1500, 1500, 1500)
+        #         #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
+        #     elif new_seed < 15:
+        #         self.sim_param.no_of_users_list = (10, 10, 10)
+        #         # self.sim_param.rate_requirements = (1500, 750, 750)
+        #         # self.sim_param.mean_iats = (2.5, 5, 5)
+        #         #self.sim_param.rate_requirements = (1500, 1500, 1500)
+        #         #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
+        #     elif new_seed >= 15:
+        #         self.sim_param.no_of_users_list = (10, 5, 10)
+        #         #self.sim_param.rate_requirements = (1500, 1500, 1500)
+        #         #self.sim_param.mean_iats = (2.5, 2.5, 2.5)
+        #
+        # self.reset_counter+=1
         # endregion
 
         # region: variable slice_list

@@ -39,9 +39,11 @@ c2 = np.mean(c1,axis=2)
 c2[0,10] -= 7
 c2[0,11] -= 5
 c2[0,12] -= 2
+
 c2[1,10] += 3
 c2[1,11] += 3
 c2[1,12] += 2
+
 c2[2,10] += 4
 c2[2,11] += 2
 c2[2,12] += 0
@@ -68,7 +70,7 @@ s12 = 25- (s22+s32)
 s13 = np.random.randint(6,11,size=2*size)
 s23 = np.random.randint(6,11,size=2*size)
 s33 = 24- (s13+s23)
-for i in range(size):
+for i in range(2*size):
     token = np.random.randint (0, 3)
     if token == 0:
         s13[i] += 1
@@ -86,8 +88,10 @@ c2 = np.mean(c1,axis=2)
 # modify dt
 c2[0,10] += 7.5
 c2[0,11] += 5
+
 c2[1,10] -= 3.5
 c2[1,11] -= 3
+
 c2[2,10] -= 4
 c2[2,11] -= 2
 pyplot.plot(c2[0],'r--',label="slice 1")
